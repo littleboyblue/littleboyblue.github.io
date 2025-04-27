@@ -64,7 +64,7 @@
                     const time = timeData[params[0].dataIndex];
                     let res = `<div style="margin-bottom:5px">时间: ${time}</div>`;
                     params.forEach(item => {
-                        res += `${item.marker} ${item.seriesName}: <strong>${item.data} kW</strong><br/>`;
+                        res += `${item.marker} ${item.seriesName}: <strong>${item.data} 千瓦时</strong><br/>`;
                     });
                     // 添加备注信息
                     const notes = {
@@ -99,7 +99,7 @@
             },
             yAxis: {
                 type: 'value',
-                name: '发电量 (kW)',
+                name: '发电量 (千瓦时)',
                 axisLine: { show: true },
                 axisLabel: { formatter: '{value}' }
             },
