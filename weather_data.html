@@ -3,30 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>气象数据图表</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+            padding: 0;
+            background-color: white;
         }
         .chart-container {
-            background-color: transparent;
+            background-color: white;
             padding: 0;
-            margin-bottom: 30px;
+            margin: 0;
         }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        h2 {
-            color: #444;
-            margin-top: 0;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+        h1, h2 {
+            display: none; /* 隐藏标题 */
         }
     </style>
 </head>
@@ -85,12 +77,14 @@
                 responsive: true,
                 plugins: {
                     title: {
-                        display: true,
-                        text: "24小时气象变化"
+                        display: false // 隐藏图表标题
                     },
                     tooltip: {
                         mode: "index",
                         intersect: false
+                    },
+                    legend: {
+                        position: 'top' // 图例保持在顶部
                     }
                 },
                 scales: {
@@ -98,6 +92,9 @@
                         title: {
                             display: true,
                             text: "时间"
+                        },
+                        grid: {
+                            display: false // 移除x轴网格线
                         }
                     },
                     y: {
@@ -107,6 +104,9 @@
                         title: {
                             display: true,
                             text: "温度 (°C)"
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)' // 浅色网格线
                         }
                     },
                     y1: {
