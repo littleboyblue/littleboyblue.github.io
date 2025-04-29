@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <canvas id="combinedChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('combinedChart').getContext('2d');
+        
+        // 数据准备
+        const labels = [
+            '0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', 
+            '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', 
+            '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
+            '19:00', '20:00', '21:00', '22:00', '23:00'
+        ];
+        
+        const predictedData = [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 3.52, 31.73, 76.63, 127.18, 141.04, 167.89, 144.44, 128.80, 109.36, 97.00, 71.94, 38.34, 11.15, 0.03, 0.00, 0.00, 0.00];
+        const actualData = [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 3.59, 32.06, 76.80, 125.62, 139.88, 165.91, 144.86, 131.86, 109.91, 99.33, 71.78, 38.11, 11.24, 0.03, 0.00, 0.00, 0.00];
+        const accuracyData = [98.08, 98.44, 97.46, 97.19, 97.02, 96.05, 97.01, 96.44, 97.63, 98.83, 96.24, 96.20, 98.65, 98.38, 96.64, 98.45, 97.46, 98.00, 98.69, 98.82, 96.20, 98.84, 96.32, 98.26];
+        
+        // 创建组合图表
+        const combinedChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '预测值',
+                        data: predictedData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '实际值',
+                        data: actualData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '准确率(%)',
+                        data: accuracyData,
+                        type: 'line',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                        pointRadius: 4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '时间'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '预测值/实际值'
+                        },
+                        min: 0
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '准确率(%)'
+                        },
+                        min: 90,
+                        max: 100,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
