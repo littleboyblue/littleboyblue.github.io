@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>可调负荷数据可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .chart-container {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+    <script>
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
+                datasets: [
+                    {
+                        label: '可调柔性负荷',
+                        data: [1250.34, 1180.56, 1120.23, 1080.67, 1050.12, 1100.45, 1300.78, 1500.12, 1800.45, 1750.78, 1700.12, 1650.45, 1600.78, 1550.12, 1500.45, 1450.78, 1400.12, 1350.45, 1400.78, 1500.12, 1600.45, 1700.78, 1800.12, 1900.45],
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '可调刚性负荷',
+                        data: [320.15, 315.78, 310.45, 305.89, 300.12, 295.34, 290.67, 285.89, 280.12, 275.34, 270.67, 265.89, 260.12, 255.34, 250.67, 245.89, 240.12, 235.34, 230.67, 225.89, 220.12, 215.34, 210.67, 205.89],
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '储能',
+                        data: [2850.67, 2800.45, 2750.12, 2700.34, 2650.67, 2600.89, 2550.12, 2500.45, 2450.78, 2400.12, 2350.45, 2300.78, 2250.12, 2200.45, 2150.78, 2100.12, 2050.45, 2000.78, 1950.12, 1900.45, 1850.78, 1800.12, 1750.45, 1700.78],
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '',
+                        font: {
+                            size: 18
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            footer: (tooltipItems) => {
+                                let sum = 0;
+                                tooltipItems.forEach(function(tooltipItem) {
+                                    sum += tooltipItem.parsed.y;
+                                });
+                                return '总可调负荷: ' + sum.toFixed(2);
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '时间'
+                        },
+                        stacked: true
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '负荷值'
+                        },
+                        stacked: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

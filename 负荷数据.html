@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>负荷数据堆叠图</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 1000px;
+            height: 500px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1></h1>
+    
+    <div class="chart-container">
+        <canvas id="stackedChart"></canvas>
+    </div>
+
+    <script>
+        // 数据准备
+        const labels = ['0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', 
+                       '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
+                       '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        
+        const adjustableLoad = [4421.16, 4296.79, 4180.80, 4086.90, 4000.91, 3996.68, 4141.57, 4286.46,
+                              4531.35, 4426.24, 4321.24, 4217.12, 4111.02, 4005.91, 3901.90, 3796.79,
+                              3690.69, 3586.57, 3581.57, 3626.46, 3671.35, 3716.24, 3761.24, 3807.12];
+        
+        const nonAdjustableLoad = [1800.23, 1750.89, 1700.56, 1650.78, 1600.45, 1550.67, 1800.34, 2200.67,
+                                 2800.12, 3000.45, 3100.78, 3200.12, 3100.45, 3000.78, 2900.12, 2800.45,
+                                 2700.78, 2600.12, 2500.45, 2400.78, 2300.12, 2200.45, 2100.78, 2000.12];
+
+        // 堆叠区域图
+        const ctx = document.getElementById('stackedChart').getContext('2d');
+        const stackedChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '可调负荷',
+                        data: adjustableLoad,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        tension: 0.1,
+                        fill: true
+                    },
+                    {
+                        label: '非可调负荷',
+                        data: nonAdjustableLoad,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        tension: 0.1,
+                        fill: '-1' // 堆叠在上一个数据集上
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            afterBody: function(context) {
+                                const total = adjustableLoad[context[0].dataIndex] + nonAdjustableLoad[context[0].dataIndex];
+                                return '总和: ' + total.toFixed(2);
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: '负荷量'
+                        },
+                        stacked: true
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '时间'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
