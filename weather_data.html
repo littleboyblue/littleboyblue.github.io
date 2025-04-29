@@ -13,10 +13,8 @@
             background-color: #f5f5f5;
         }
         .chart-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
+            background-color: transparent;
+            padding: 0;
             margin-bottom: 30px;
         }
         h1 {
@@ -48,38 +46,38 @@
         const humidity = [17.5, 20.4, 22.6, 24.4, 26.1, 29.1, 36, 40.1, 31.6, 27.4, 25, 17.9, 13.6, 11.4, 10.1, 11.2, 11.1, 12.4, 14.4, 18.5, 22.1, 23.5, 25.8, 26.7];
 
         // 气象数据图表
-        const weatherCtx = document.getElementById('weatherChart').getContext('2d');
+        const weatherCtx = document.getElementById("weatherChart").getContext("2d");
         new Chart(weatherCtx, {
-            type: 'line',
+            type: "line",
             data: {
                 labels: times,
                 datasets: [
                     {
-                        label: '温度 (°C)',
+                        label: "温度 (°C)",
                         data: temperature,
-                        borderColor: 'rgba(255, 159, 64, 1)',
-                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        borderColor: "rgba(255, 159, 64, 1)",
+                        backgroundColor: "rgba(255, 159, 64, 0.2)",
                         borderWidth: 2,
                         tension: 0.1,
-                        yAxisID: 'y'
+                        yAxisID: "y"
                     },
                     {
-                        label: '气压 (hPa)',
+                        label: "气压 (hPa)",
                         data: pressure,
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderColor: "rgba(153, 102, 255, 1)",
+                        backgroundColor: "rgba(153, 102, 255, 0.2)",
                         borderWidth: 2,
                         tension: 0.1,
-                        yAxisID: 'y1'
+                        yAxisID: "y1"
                     },
                     {
-                        label: '湿度 (%)',
+                        label: "湿度 (%)",
                         data: humidity,
-                        borderColor: 'rgba(201, 203, 207, 1)',
-                        backgroundColor: 'rgba(201, 203, 207, 0.2)',
+                        borderColor: "rgba(201, 203, 207, 1)",
+                        backgroundColor: "rgba(201, 203, 207, 0.2)",
                         borderWidth: 2,
                         tension: 0.1,
-                        yAxisID: 'y2'
+                        yAxisID: "y2"
                     }
                 ]
             },
@@ -88,10 +86,10 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: '24小时气象变化'
+                        text: "24小时气象变化"
                     },
                     tooltip: {
-                        mode: 'index',
+                        mode: "index",
                         intersect: false
                     }
                 },
@@ -99,37 +97,37 @@
                     x: {
                         title: {
                             display: true,
-                            text: '时间'
+                            text: "时间"
                         }
                     },
                     y: {
-                        type: 'linear',
+                        type: "linear",
                         display: true,
-                        position: 'left',
+                        position: "left",
                         title: {
                             display: true,
-                            text: '温度 (°C)'
+                            text: "温度 (°C)"
                         }
                     },
                     y1: {
-                        type: 'linear',
+                        type: "linear",
                         display: true,
-                        position: 'right',
+                        position: "right",
                         title: {
                             display: true,
-                            text: '气压 (hPa)'
+                            text: "气压 (hPa)"
                         },
                         grid: {
                             drawOnChartArea: false
                         }
                     },
                     y2: {
-                        type: 'linear',
+                        type: "linear",
                         display: true,
-                        position: 'right',
+                        position: "right",
                         title: {
                             display: true,
-                            text: '湿度 (%)'
+                            text: "湿度 (%)"
                         },
                         grid: {
                             drawOnChartArea: false
