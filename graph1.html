@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .chart-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1></h1>
+    <div class="chart-container">
+        <canvas id="powerChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('powerChart').getContext('2d');
+        
+        // 准备数据
+        const labels = [
+            '0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', 
+            '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', 
+            '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', 
+            '21:00', '22:00', '23:00'
+        ];
+        
+        const datasets = [
+            {
+                label: '光伏场站A',
+                data: [0, 0, 0, 0, 0, 0, 0, 3.52, 31.73, 76.63, 127.18, 141.04, 167.89, 144.44, 128.8, 109.36, 97, 71.94, 38.34, 11.15, 0.03, 0, 0, 0],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderWidth: 2,
+                tension: 0.1
+            },
+            {
+                label: '光伏场站B',
+                data: [0, 0, 0, 0, 0, 0, 0, 2.52, 17.73, 19.42, 49.26, 91.3, 144.36, 136.79, 119.24, 35.63, 40.88, 62.87, 42.15, 13.27, 0.1, 0, 0, 0],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderWidth: 2,
+                tension: 0.1
+            },
+            {
+                label: '光伏场站C',
+                data: [0, 0, 0, 0, 0, 0, 0, 4.17, 35.47, 71.76, 121.38, 134.23, 144.05, 151.69, 126.48, 101.1, 73.28, 70.59, 54.88, 11.52, 0.39, 0, 0, 0],
+                borderColor: 'rgba(255, 206, 86, 1)',
+                backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                borderWidth: 2,
+                tension: 0.1
+            },
+            {
+                label: '光伏场站D',
+                data: [0, 0, 0, 0, 0, 0, 0, 4.29, 34.53, 85.8, 134.94, 153.13, 165.84, 157.73, 143.18, 146.35, 121.39, 88.06, 42.87, 5.88, 0.17, 0, 0, 0],
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderWidth: 2,
+                tension: 0.1
+            },
+            {
+                label: '光伏场站E',
+                data: [0, 0, 0, 0, 0, 0, 0, 5.95, 37.71, 88.13, 136.9, 143.49, 157.46, 151.41, 130.68, 119.98, 93.59, 58.14, 49.04, 11.22, 0.25, 0, 0, 0],
+                borderColor: 'rgba(153, 102, 255, 1)',
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                borderWidth: 2,
+                tension: 0.1
+            }
+        ];
+        
+        // 创建图表
+        const powerChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: ''
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: '发电量'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '时间'
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>气象与辐射数据可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #444;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1></h1>
+    
+    <div class="chart-container">
+        <h2>辐射数据 (W/m²)</h2>
+        <canvas id="radiationChart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <h2>气象数据</h2>
+        <canvas id="weatherChart"></canvas>
+    </div>
+
+    <script>
+        // 数据准备
+        const times = ['0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        const totalRadiation = [0, 0, 0, 0, 0, 0, 0, 40, 119, 245, 469, 610, 659, 666, 789, 551, 689, 349, 233, 51, 1, 0, 0, 0];
+        const directRadiation = [0, 0, 0, 0, 0, 0, 0, 17, 59, 218, 390, 496, 539, 587, 367, 156, 330, 44, 43, 4, 0, 0, 0, 0];
+        const diffuseRadiation = [0, 0, 0, 0, 0, 0, 0, 93, 153, 324, 492, 631, 698, 741, 684, 422, 564, 213, 153, 35, 1, 0, 0, 0];
+        
+        const temperature = [13, 11.5, 11.9, 11.6, 10.9, 9.2, 8.1, 7.7, 9.7, 13.1, 15.1, 17.6, 19.1, 20.4, 21.6, 21.2, 21.4, 20.6, 19.3, 17.7, 16.4, 15.4, 14.7, 13.9];
+        const pressure = [859.4, 860, 860.1, 860.1, 859.8, 859.8, 859.8, 860, 860.2, 860.2, 860.1, 859.9, 859.3, 858.4, 857.7, 857, 856.4, 856.3, 856.8, 857.6, 858.7, 860.2, 861.4, 861.7];
+        const humidity = [17.5, 20.4, 22.6, 24.4, 26.1, 29.1, 36, 40.1, 31.6, 27.4, 25, 17.9, 13.6, 11.4, 10.1, 11.2, 11.1, 12.4, 14.4, 18.5, 22.1, 23.5, 25.8, 26.7];
+
+        // 辐射数据图表
+        const radiationCtx = document.getElementById('radiationChart').getContext('2d');
+        new Chart(radiationCtx, {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets: [
+                    {
+                        label: '总辐射强度',
+                        data: totalRadiation,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '直射辐射',
+                        data: directRadiation,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '散射辐射',
+                        data: diffuseRadiation,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '24小时辐射变化'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '时间'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '辐射强度 (W/m²)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // 气象数据图表
+        const weatherCtx = document.getElementById('weatherChart').getContext('2d');
+        new Chart(weatherCtx, {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets: [
+                    {
+                        label: '温度 (°C)',
+                        data: temperature,
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '气压 (hPa)',
+                        data: pressure,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '湿度 (%)',
+                        data: humidity,
+                        borderColor: 'rgba(201, 203, 207, 1)',
+                        backgroundColor: 'rgba(201, 203, 207, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '24小时气象变化'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '时间'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '温度 (°C)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '气压 (hPa)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '湿度 (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        min: 0,
+                        max: 50
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
