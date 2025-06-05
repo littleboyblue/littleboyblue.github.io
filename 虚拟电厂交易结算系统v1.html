@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟电厂交易结算系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .stat-card {
+            border-left: 4px solid #007bff;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .highlight-cell {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .chart-container {
+            height: 300px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .nav-tabs .nav-link.active {
+            border-bottom: 3px solid #007bff;
+            font-weight: bold;
+        }
+        .badge-deviation {
+            background-color: #fd7e14;
+        }
+        .negative-value {
+            color: #dc3545;
+        }
+        .positive-value {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid px-4 py-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-calculator me-2"></i>交易结算</h2>
+            <div class="d-flex">
+                <div class="me-3">
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>市场结算单: 已同步
+                    </span>
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>计量数据: 已同步
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>SCADA数据: 部分缺失
+                    </span>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-calendar3 me-1"></i>2023-07-15 (日结算)
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item active" href="#">日结算</a></li>
+                        <li><a class="dropdown-item" href="#">周结算</a></li>
+                        <li><a class="dropdown-item" href="#">月结算</a></li>
+                    </ul>
+                    <button class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat me-1"></i>刷新数据
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">售电收入</h6>
+                        <h4 class="card-title">¥48,750</h4>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="text-muted small">计划</span>
+                            <span class="text-muted small">¥52,300</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar bg-danger" style="width: 93%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">购电成本</h6>
+                        <h4 class="card-title">¥32,150</h4>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="text-muted small">计划</span>
+                            <span class="text-muted small">¥28,900</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar bg-warning" style="width: 111%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">净收益</h6>
+                        <h4 class="card-title positive-value">¥16,600</h4>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="text-muted small">计划</span>
+                            <span class="text-muted small positive-value">¥23,400</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar bg-success" style="width: 71%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">储能净损益</h6>
+                        <h4 class="card-title negative-value">-¥3,200</h4>
+                        <div class="d-flex justify-content-between mt-3">
+                            <span class="text-muted small">计划</span>
+                            <span class="text-muted small positive-value">¥1,500</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar bg-danger" style="width: 213%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">结算明细</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2">
+                                <i class="bi bi-file-earmark-pdf"></i> 导出结算单
+                            </button>
+                            <button class="btn btn-sm btn-success me-2">
+                                <i class="bi bi-check-circle"></i> 核对确认
+                            </button>
+                            <button class="btn btn-sm btn-warning">
+                                <i class="bi bi-exclamation-triangle"></i> 发起争议
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs mb-4" id="settlementTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="transaction-tab" data-bs-toggle="tab">
+                                    <i class="bi bi-lightning-charge"></i> 交易结算
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="storage-tab" data-bs-toggle="tab">
+                                    <i class="bi bi-battery-charging"></i> 储能结算
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="deviation-tab" data-bs-toggle="tab">
+                                    <i class="bi bi-clipboard-data"></i> 偏差分析
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="settlementTabContent">
+                            <div class="tab-pane fade show active" id="transaction" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>时段</th>
+                                                <th>计划交易类型</th>
+                                                <th>计划电量 (MWh)</th>
+                                                <th>计划电价 (¥/MWh)</th>
+                                                <th>实际交易类型</th>
+                                                <th>实际电量 (MWh)</th>
+                                                <th>实际电价 (¥/MWh)</th>
+                                                <th>金额 (¥)</th>
+                                                <th>偏差量 (MWh)</th>
+                                                <th>偏差原因</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>00:00-00:30</td>
+                                                <td><span class="badge bg-success">卖电</span></td>
+                                                <td>10.5</td>
+                                                <td>520</td>
+                                                <td><span class="badge bg-success">卖电</span></td>
+                                                <td>9.3</td>
+                                                <td>515</td>
+                                                <td class="positive-value">4,789.5</td>
+                                                <td class="negative-value">-1.2</td>
+                                                <td><span class="badge badge-deviation">光伏偏低</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>00:30-01:00</td>
+                                                <td><span class="badge bg-success">卖电</span></td>
+                                                <td>9.8</td>
+                                                <td>510</td>
+                                                <td><span class="badge bg-success">卖电</span></td>
+                                                <td>10.2</td>
+                                                <td>508</td>
+                                                <td class="positive-value">5,181.6</td>
+                                                <td class="positive-value">+0.4</td>
+                                                <td><span class="badge badge-deviation">负荷偏高</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>07:00-07:30</td>
+                                                <td><span class="badge bg-danger">买电</span></td>
+                                                <td>5.2</td>
+                                                <td>485</td>
+                                                <td><span class="badge bg-danger">买电</span></td>
+                                                <td>6.5</td>
+                                                <td>490</td>
+                                                <td class="negative-value">-3,185</td>
+                                                <td class="negative-value">-1.3</td>
+                                                <td><span class="badge badge-deviation">储能异常</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>12:00-12:30</td>
+                                                <td><span class="badge bg-success">卖电</span></td>
+                                                <td>15.2</td>
+                                                <td>530</td>
+                                                <td><span class="badge bg-success">卖电</span></td>
+                                                <td>12.8</td>
+                                                <td>525</td>
+                                                <td class="positive-value">6,720</td>
+                                                <td class="negative-value">-2.4</td>
+                                                <td><span class="badge badge-deviation">光伏偏低</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>18:00-18:30</td>
+                                                <td><span class="badge bg-danger">买电</span></td>
+                                                <td>8.5</td>
+                                                <td>470</td>
+                                                <td><span class="badge bg-danger">买电</span></td>
+                                                <td>9.1</td>
+                                                <td>475</td>
+                                                <td class="negative-value">-4,322.5</td>
+                                                <td class="negative-value">-0.6</td>
+                                                <td><span class="badge badge-deviation">负荷偏高</span></td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="2"><strong>总计</strong></td>
+                                                <td>49.2</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>47.9</td>
+                                                <td>-</td>
+                                                <td>16,600</td>
+                                                <td>-1.3</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="storage" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>时段</th>
+                                                <th>充/放</th>
+                                                <th>计划电量 (MWh)</th>
+                                                <th>实际电量 (MWh)</th>
+                                                <th>电价 (¥/MWh)</th>
+                                                <th>损益 (¥)</th>
+                                                <th>偏差量 (MWh)</th>
+                                                <th>偏差原因</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>02:00-02:30</td>
+                                                <td><span class="badge bg-primary">充电</span></td>
+                                                <td>4.5</td>
+                                                <td>4.8</td>
+                                                <td>460</td>
+                                                <td class="negative-value">-2,208</td>
+                                                <td class="negative-value">-0.3</td>
+                                                <td><span class="badge badge-deviation">充电延迟</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>10:30-11:00</td>
+                                                <td><span class="badge bg-warning text-dark">放电</span></td>
+                                                <td>6.2</td>
+                                                <td>5.7</td>
+                                                <td>520</td>
+                                                <td class="positive-value">2,964</td>
+                                                <td class="negative-value">-0.5</td>
+                                                <td><span class="badge badge-deviation">放电不足</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>14:00-14:30</td>
+                                                <td><span class="badge bg-warning text-dark">放电</span></td>
+                                                <td>7.1</td>
+                                                <td>6.3</td>
+                                                <td>515</td>
+                                                <td class="positive-value">3,244.5</td>
+                                                <td class="negative-value">-0.8</td>
+                                                <td><span class="badge badge-deviation">效率下降</span></td>
+                                            </tr>
+                                            <tr class="highlight-cell">
+                                                <td>17:00-17:30</td>
+                                                <td><span class="badge bg-warning text-dark">放电</span></td>
+                                                <td>5.8</td>
+                                                <td>4.2</td>
+                                                <td>530</td>
+                                                <td class="positive-value">2,226</td>
+                                                <td class="negative-value">-1.6</td>
+                                                <td><span class="badge bg-danger">故障停机</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>22:00-22:30</td>
+                                                <td><span class="badge bg-primary">充电</span></td>
+                                                <td>5.0</td>
+                                                <td>4.5</td>
+                                                <td>450</td>
+                                                <td class="negative-value">-2,025</td>
+                                                <td class="negative-value">-0.5</td>
+                                                <td><span class="badge badge-deviation">充电延迟</span></td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="2"><strong>总计</strong></td>
+                                                <td>28.6</td>
+                                                <td>25.5</td>
+                                                <td>-</td>
+                                                <td>-3,200</td>
+                                                <td>-3.1</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="deviation" role="tabpanel">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <h5>光伏发电计划 vs 实际对比</h5>
+                                            <div class="text-center text-muted my-5">
+                                                [此处应放置光伏发电计划与实际对比曲线图]
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <h5>负荷需求计划 vs 实际对比</h5>
+                                            <div class="text-center text-muted my-5">
+                                                [此处应放置负荷计划与实际对比曲线图]
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <h5>SOC状态计划 vs 实际对比</h5>
+                                            <div class="text-center text-muted my-5">
+                                                [此处应放置SOC计划与实际对比曲线图]
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="chart-container">
+                                            <h5>交易偏差原因分布</h5>
+                                            <div class="text-center text-muted my-5">
+                                                [此处应放置偏差原因饼图]
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-warning">
+                                    <h5><i class="bi bi-exclamation-triangle-fill me-2"></i>主要偏差分析</h5>
+                                    <ul>
+                                        <li>光伏发电全天平均偏差 -12.5%，主要由于14点左右云层覆盖超出预测</li>
+                                        <li>负荷需求平均偏差 +8.3%，工业园区7:30-9:00时段额外启动设备</li>
+                                        <li>储能系统在17:00-17:30放电异常，损失1.6MWh电量，初步判定为由BMS故障引起</li>
+                                        <li>日前市场预测电价与实际出清电价平均偏差 +3.2%，但仍处于合理波动范围</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">关联功能</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap">
+                            <a href="#" class="btn btn-outline-primary me-3 mb-2">
+                                <i class="bi bi-journal-text me-1"></i>查看当日交易计划
+                            </a>
+                            <a href="#" class="btn btn-outline-secondary me-3 mb-2">
+                                <i class="bi bi-graph-up me-1"></i>生成偏差分析报告
+                            </a>
+                            <a href="#" class="btn btn-outline-info me-3 mb-2">
+                                <i class="bi bi-shuffle me-1"></i>关联调度指令
+                            </a>
+                            <a href="#" class="btn btn-outline-success me-3 mb-2">
+                                <i class="bi bi-file-earmark-spreadsheet me-1"></i>导出完整结算凭证
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 简单的交互效果示例
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabElms = document.querySelectorAll('[data-bs-toggle="tab"]');
+            tabElms.forEach(tabEl => {
+                tabEl.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('href');
+                    const tabContent = document.querySelector('.tab-content');
+                    const activePane = tabContent.querySelector('.tab-pane.active');
+                    
+                    activePane.classList.remove('show', 'active');
+                    document.querySelector(target).classList.add('show', 'active');
+                    
+                    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // 模拟数据加载效果
+            const refreshBtn = document.querySelector('.btn-primary');
+            refreshBtn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                icon.classList.remove('bi-arrow-repeat');
+                icon.classList.add('bi-arrow-clockwise');
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    icon.classList.remove('bi-arrow-clockwise');
+                    icon.classList.add('bi-arrow-repeat');
+                    this.disabled = false;
+                    
+                    // 模拟Toast通知
+                    const toast = document.createElement('div');
+                    toast.className = 'position-fixed bottom-0 end-0 p-3';
+                    toast.style.zIndex = '11';
+                    toast.innerHTML = `
+                        <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-success text-white">
+                                <strong class="me-auto">数据刷新</strong>
+                                <small>刚刚</small>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">
+                                结算数据已更新到最新状态
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 3000);
+                }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>

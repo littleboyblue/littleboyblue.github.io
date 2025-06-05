@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=.9">
+    <title>虚拟电厂交易分析平台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+            color: #d1e4ed;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+        }
+        
+        /* 顶部控制栏 */
+        .top-controls {
+            background: rgba(16, 30, 48, 0.8);
+            border: 1px solid #2a4a70;
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 24px rgba(0, 10, 30, 0.5);
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            padding: 0 10px;
+            border-right: 1px solid #2a5578;
+        }
+        
+        .control-group:last-child {
+            border-right: none;
+        }
+        
+        .control-group label {
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #7ab3ef;
+        }
+        
+        select, .date-range {
+            background: rgba(20, 45, 75, 0.7);
+            color: #e6f2ff;
+            border: 1px solid #3a6ea5;
+            border-radius: 6px;
+            padding: 8px 12px;
+            min-width: 180px;
+            outline: none;
+        }
+        
+        .date-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .compare-selector {
+            padding: 8px;
+            background: rgba(30, 70, 100, 0.35);
+            border-radius: 6px;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #3a7bd5, #00d2ff);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 9px 18px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 210, 255, 0.4);
+        }
+        
+        .btn.secondary {
+            background: linear-gradient(to right, #414850, #6c7989);
+        }
+        
+        /* KPI 卡片 */
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .kpi-card {
+            background: rgba(16, 30, 48, 0.7);
+            border: 1px solid #2a4a70;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            border-color: #3a7bd5;
+        }
+        
+        .kpi-title {
+            font-size: 14px;
+            color: #7ab3ef;
+            margin-bottom: 12px;
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 5px 0;
+            text-shadow: 0 0 10px rgba(100, 180, 255, 0.5);
+        }
+        
+        .kpi-change {
+            font-size: 13px;
+            display: flex;
+            justify-content: center;
+            margin-top: 8px;
+            color: #acd8ff;
+        }
+        
+        .positive {
+            color: #2ecc71;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        /* 仪表盘布局 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 330px;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: rgba(16, 30, 48, 0.7);
+            border: 1px solid #2a4a70;
+            border-radius: 12px;
+            padding: 18px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-1-2 {
+            grid-column: span 2;
+        }
+        
+        .card-2-2 {
+            grid-row: span 2;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #7ab3ef;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .card-actions i {
+            font-size: 14px;
+            color: #afc9e0;
+            cursor: pointer;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: calc(100% - 40px);
+            position: relative;
+        }
+        
+        .resource-chip {
+            display: inline-block;
+            background: rgba(40, 100, 160, 0.3);
+            border: 1px solid #3a6ea5;
+            border-radius: 12px;
+            padding: 2px 10px;
+            margin: 0 5px 5px 0;
+            font-size: 12px;
+        }
+        
+        /* AI建议卡片 */
+        .ai-recommendation {
+            background: linear-gradient(135deg, #0c2f4c, #125e78);
+            border: 1px solid #2a95c5;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .ai-header h3 {
+            color: #6dd5ff;
+        }
+        
+        .ai-icon {
+            color: #6dd5ff;
+            font-size: 22px;
+        }
+        
+        .recommendation-list {
+            padding-left: 20px;
+        }
+        
+        .recommendation-list li {
+            margin-bottom: 12px;
+            list-style-type: "";
+            padding-left: 10px;
+            color: #bbf0ff;
+        }
+        
+        .highlight {
+            background: linear-gradient(transparent 65%, rgba(109, 213, 255, 0.4) 35%);
+            padding: 0 4px;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 1400px) {
+            .dashboard {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 1100px) {
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .top-controls {
+                flex-direction: column;
+            }
+            
+            .control-group {
+                border-right: none;
+                border-bottom: 1px solid #2a5578;
+                padding: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-controls">
+            <div class="control-group">
+                <label>时间范围</label>
+                <div class="date-range">
+                    <input type="date" value="2024-06-01">
+                    <span>至</span>
+                    <input type="date" value="2024-06-30">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>对比分析</label>
+                <div class="compare-selector">
+                    <select>
+                        <option selected>环比 (上月)</option>
+                        <option>同比 (去年)</option>
+                        <option>多期对比</option>
+                        <option>无</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>市场类型</label>
+                <select multiple size="2">
+                    <option selected>日前市场</option>
+                    <option selected>实时市场</option>
+                    <option>辅助服务市场</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>资源类型</label>
+                <select multiple size="3">
+                    <option selected>光伏电站A</option>
+                    <option selected>储能系统B</option>
+                    <option>风电场C</option>
+                    <option>可调负荷D</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin-left: auto;">
+                <button class="btn"><i class="fas fa-sync"></i> 刷新数据</button>
+                <button class="btn"><i class="fas fa-download"></i> 导出报表</button>
+                <button class="btn secondary"><i class="fas fa-save"></i> 保存视图</button>
+            </div>
+        </div>
+        
+        <!-- KPI概览卡片部分 -->
+        <section class="kpi-section">
+            <div class="kpi-card">
+                <div class="kpi-title">总交易收益</div>
+                <div class="kpi-value">¥1,865,250</div>
+                <div class="kpi-change">
+                    <i class="fas fa-caret-up positive"></i>
+                    <span class="positive">12.7%</span> vs 上月
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-title">平均度电收益</div>
+                <div class="kpi-value">¥0.86/MWh</div>
+                <div class="kpi-change">
+                    <i class="fas fa-caret-up positive"></i>
+                    <span class="positive">4.3%</span> vs 上月
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-title">盈亏平衡达成率</div>
+                <div class="kpi-value">127.4%</div>
+                <div class="kpi-change">
+                    <i class="fas fa-caret-up positive"></i>
+                    <span class="positive">8.6%</span> vs 上月
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-title">中标率</div>
+                <div class="kpi-value">78.9%</div>
+                <div class="kpi-change">
+                    <i class="fas fa-caret-down negative"></i>
+                    <span class="negative">3.2%</span> vs 上月
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-title">偏差考核成本</div>
+                <div class="kpi-value">¥72,560</div>
+                <div class="kpi-change">
+                    <i class="fas fa-caret-down positive"></i>
+                    <span class="positive">-15.1%</span> vs 上月
+                </div>
+            </div>
+        </section>
+        
+        <!-- AI优化建议 -->
+        <section class="ai-recommendation">
+            <div class="ai-header">
+                <i class="fas fa-robot ai-icon"></i>
+                <h3>交易优化建议</h3>
+            </div>
+            <ul class="recommendation-list">
+                <li>建议在峰时段<span class="highlight">提高光伏电站A价格申报比例</span>5-10%，预测可增加收益45-90万元/月。</li>
+                <li><span class="highlight">储能系统B</span>在谷时段调用不足，建议调整调度策略，提高经济性约15%。</li>
+                <li>经分析，周三～周五14:00-16:00存在较大<span class="highlight">负偏差风险</span>，建议加强日前预测准确性。</li>
+                <li>辅助服务参与度仅36.7%，挖掘潜力可增加<span class="highlight">年均收益约120万元</span>。</li>
+            </ul>
+        </section>
+        
+        <!-- 图表仪表盘 -->
+        <div class="dashboard">
+            <!-- 收益成本趋势图 -->
+            <div class="chart-card card-1-2">
+                <div class="card-header">
+                    <div class="card-title">收益与成本趋势</div>
+                    <div class="card-actions">
+                        <i class="fas fa-expand-alt"></i>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 度电收益排名 -->
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="card-title">资源度电收益排名</div>
+                    <div class="card-actions">
+                        <i class="fas fa-expand-alt"></i>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueRankChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 市场参与度分布 -->
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="card-title">市场参与度分布</div>
+                    <div class="card-actions">
+                        <i class="fas fa-expand-alt"></i>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="marketParticipationChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 资源调度占比 -->
+            <div class="chart-card">
+                <div class="card-header">
+                    <div class="card-title">资源调度贡献度</div>
+                    <div class="card-actions">
+                        <i class="fas fa-expand-alt"></i>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="resourceContributionChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 偏差考核分析 -->
+            <div class="chart-card card-1-2">
+                <div class="card-header">
+                    <div class="card-title">考核费用结构分析</div>
+                    <div class="card-actions">
+                        <i class="fas fa-expand-alt"></i>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="penaltyChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 资源表现热力图 -->
+            <div class="chart-card card-1-2">
+                <div class="card-header">
+                    <div class="card-title">资源中标时段分布</div>
+                    <div class="card-actions">
+                        <i class="fas fa-expand-alt"></i>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="heatmapChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- SOC预测偏差 -->
+            <div class="chart-card card-1-2">
+                <div class="card-header">
+                    <div class="card-title">SOC预测与实际偏差</div>
+                    <div class="card-actions">
+                        <i class="fas fa-expand-alt"></i>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="socChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据生成函数
+        function generateData(pointCount, min, max) {
+            return Array.from({ length: pointCount }, () => 
+            Math.floor(Math.random() * (max - min + 1)) + min);
+        }
+        
+        // 收益成本趋势图
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: ['6/1', '6/5', '6/10', '6/15', '6/20', '6/25', '6/30'],
+                datasets: [
+                    {
+                        label: '日收益',
+                        data: [52000, 65000, 72000, 68000, 75000, 82000, 78000],
+                        borderColor: '#00d2ff',
+                        backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: '成本',
+                        data: [21000, 22000, 28000, 25000, 27000, 30000, 26000],
+                        borderColor: '#ff6b6b',
+                        borderWidth: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: '目标线',
+                        data: [55000, 55000, 55000, 55000, 55000, 55000, 55000],
+                        borderColor: '#5ff550',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(100, 150, 200, 0.1)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '¥' + (value/1000) + 'k';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#c8dff8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 度电收益排名图
+        const revenueRankCtx = document.getElementById('revenueRankChart').getContext('2d');
+        const revenueRankChart = new Chart(revenueRankCtx, {
+            type: 'bar',
+            data: {
+                labels: ['光伏电站A', '储能系统B', '风电场C', '可调负荷D'],
+                datasets: [{
+                    label: '度电收益(¥/MWh)',
+                    data: [0.95, 0.86, 0.72, 0.68],
+                    backgroundColor: [
+                        'rgba(64, 224, 208, 0.6)',
+                        'rgba(70, 130, 180, 0.6)',
+                        'rgba(65, 105, 225, 0.6)',
+                        'rgba(100, 149, 237, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgb(64, 224, 208)',
+                        'rgb(70, 130, 180)',
+                        'rgb(65, 105, 225)',
+                        'rgb(100, 149, 237)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(100, 150, 200, 0.1)'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // 市场参与度图
+        const marketCtx = document.getElementById('marketParticipationChart').getContext('2d');
+        const marketChart = new Chart(marketCtx, {
+            type: 'bar',
+            data: {
+                labels: ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24'],
+                datasets: [{
+                    label: '日前市场',
+                    data: [65, 75, 92, 88, 95, 80],
+                    backgroundColor: 'rgba(0, 210, 255, 0.5)',
+                },{
+                    label: '实时市场',
+                    data: [35, 45, 78, 82, 75, 60],
+                    backgroundColor: 'rgba(100, 149, 237, 0.5)',
+                },{
+                    label: '辅助服务',
+                    data: [12, 15, 28, 35, 40, 20],
+                    backgroundColor: 'rgba(50, 205, 50, 0.5)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {
+                            color: 'rgba(100, 150, 200, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#c8dff8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 资源调度贡献图
+        const resourceCtx = document.getElementById('resourceContributionChart').getContext('2d');
+        const resourceChart = new Chart(resourceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['光伏电站A', '储能系统B', '风电场C', '可调负荷D'],
+                datasets: [{
+                    data: [48, 32, 12, 8],
+                    backgroundColor: [
+                        'rgba(255, 215, 0, 0.7)',
+                        'rgba(123, 104, 238, 0.7)',
+                        'rgba(0, 191, 255, 0.7)',
+                        'rgba(50, 205, 50, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 215, 0, 1)',
+                        'rgba(123, 104, 238, 1)',
+                        'rgba(0, 191, 255, 1)',
+                        'rgba(50, 205, 50, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#c8dff8'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 偏差考核费用图
+        const penaltyCtx = document.getElementById('penaltyChart').getContext('2d');
+        const penaltyChart = new Chart(penaltyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['预测偏差', '指令执行延迟', '通信中断', '调节能力不足', '计量问题'],
+                datasets: [{
+                    label: '考核金额(千元)',
+                    data: [45.2, 15.7, 6.3, 3.8, 1.6],
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(100, 150, 200, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // 初始化热力图（简化示意）
+        document.addEventListener('DOMContentLoaded', function() {
+            // 模拟热力图数据
+            const heatmapCtx = document.getElementById('heatmapChart').getContext('2d');
+            const hours = ['00', '04', '08', '12', '16', '20'];
+            const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            
+            const heatData = {
+                labels: hours,
+                datasets: days.map((day, i) => ({
+                    label: day,
+                    data: hours.map(() => Math.floor(Math.random() * 100)),
+                    backgroundColor: function(context) {
+                        const value = context.raw;
+                        let alpha = value / 100;
+                        return `rgba(64, 224, 208, ${alpha})`;
+                    }
+                }))
+            };
+            
+            new Chart(heatmapCtx, {
+                type: 'bar',
+                data: heatData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    }
+                }
+            });
+            
+            // SOC预测偏差图
+            const socCtx = document.getElementById('socChart').getContext('2d');
+            const socChart = new Chart(socCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: '预测SOC',
+                        data: generateData(24, 20, 80),
+                        borderColor: '#00d2ff',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }, {
+                        label: '实际SOC',
+                        data: generateData(24, 15, 85),
+                        borderColor: '#ffa502',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: {
+                                color: 'rgba(100, 150, 200, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

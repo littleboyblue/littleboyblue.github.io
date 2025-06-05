@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟电厂调频服务监控平台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #0d47a1;
+            --accent-color: #00c853;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --bg-dark: #12192c;
+            --bg-card: #1e293b;
+            --bg-panel: #0f172a;
+            --border-color: #334155;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 100;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+        }
+        
+        .header-info {
+            text-align: right;
+        }
+        
+        .header-title {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+        
+        .header-subtitle {
+            font-weight: 300;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .alert-banner {
+            background-color: var(--danger-color);
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .alert-banner.hidden {
+            display: none;
+        }
+        
+        .main-container {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            min-height: calc(100vh - 100px);
+        }
+        
+        .content-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .kpi-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .kpi-card.warning {
+            border-top-color: var(--warning-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 18px rgba(255, 152, 0, 0.25);
+        }
+        
+        .kpi-card.critical {
+            border-top-color: var(--danger-color);
+            animation: pulse-border 2s infinite;
+        }
+        
+        .kpi-card i {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+        
+        .kpi-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-shadow: 0 0 8px rgba(0, 200, 83, 0.2);
+        }
+        
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        
+        .chart-container {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            padding: 25px 20px;
+            position: relative;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .chart-status {
+            background-color: rgba(10, 166, 153, 0.2);
+            color: #0ac699;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .chart-status.warning {
+            background-color: rgba(255, 152, 0, 0.2);
+            color: var(--warning-color);
+        }
+        
+        .chart {
+            height: 250px;
+            position: relative;
+        }
+        
+        .sidebar {
+            width: 350px;
+            background-color: var(--bg-panel);
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .sidebar h3 {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .form-group {
+            margin-bottom: 18px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .toggle-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 32px;
+        }
+        
+        .toggle-label {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            align-self: center;
+        }
+        
+        .toggle-switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4b5563;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .input-with-unit {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .input-with-unit input {
+            flex: 1;
+            background-color: #1e293b;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 12px 15px;
+            padding-right: 35px;
+            font-size: 1rem;
+        }
+        
+        .input-unit {
+            position: absolute;
+            right: 15px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .slider-input {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #4b5563, var(--primary-color));
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+            box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+        }
+        
+        .btn-apply {
+            background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+            margin-top: 10px;
+        }
+        
+        .events-panel {
+            padding: 20px;
+            background-color: var(--bg-panel);
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+        
+        .events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .events-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .events-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        .events-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .event-warning {
+            color: var(--warning-color);
+            font-weight: 500;
+        }
+        
+        .event-critical {
+            color: var(--danger-color);
+            font-weight: 700;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(0, 200, 83, 0.5);
+        }
+        
+        .status-inactive {
+            background-color: var(--text-secondary);
+        }
+        
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 8px 20px;
+            border-radius: 30px;
+            background-color: rgba(26, 115, 232, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            box-shadow: 0 4px 10px rgba(26, 115, 232, 0.3);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(244, 67, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div>
+                <h1 class="header-title">虚拟电厂调频服务监控平台</h1>
+                <p class="header-subtitle">分布式光伏 + 储能系统 | 实时频率控制 | AGC调频</p>
+            </div>
+        </div>
+        <div class="header-info">
+            <p id="current-date">2023年11月20日</p>
+            <p id="current-time">11:45:28</p>
+        </div>
+    </header>
+    
+    <div class="alert-banner critical">
+        <i class="fas fa-exclamation-triangle"></i>
+        告警：储能SOC低于可用范围 (当前: 19.8% | 下限: 20%)
+    </div>
+    
+    <div class="main-container">
+        <div class="content-panel">
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <i class="fas fa-wave-square"></i>
+                    <div class="kpi-title">电网实时频率</div>
+                    <div class="kpi-value">49.97 Hz</div>
+                    <div class="kpi-trend">
+                        <i class="fas fa-caret-down"></i>
+                        <span>-0.03 Hz</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-chart-line"></i>
+                    <div class="kpi-title">AGC指令值</div>
+                    <div class="kpi-value">-2.4 MW</div>
+                    <div class="kpi-trend">
+                        <i class="fas fa-arrows-alt-h"></i>
+                        <span>稳定</span>
+                    </div>
+                </div>
+                <div class="kpi-card warning">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <div class="kpi-title">响应延迟时间</div>
+                    <div class="kpi-value">210 ms</div>
+                    <div class="kpi-trend">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>需优化</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-battery-three-quarters"></i>
+                    <div class="kpi-title">储能系统 SOC</div>
+                    <div class="kpi-value">19.8%</div>
+                    <div class="kpi-trend">
+                        <i class="fas fa-sort-down"></i>
+                        <span>放电中</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <i class="fas fa-plug"></i>
+                    <div class="kpi-title">总响应功率</div>
+                    <div class="kpi-value">+3.2 MW</div>
+                    <div class="kpi-trend">
+                        <i class="fas fa-caret-up"></i>
+                        <span>+0.4 MW</span>
+                    </div>
+                </div>
+                <div class="kpi-card critical">
+                    <i class="fas fa-exchange-alt"></i>
+                    <div class="kpi-title">调节精度偏差</div>
+                    <div class="kpi-value">12.5%</div>
+                    <div class="kpi-trend">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>超出阈值</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">电网频率实时监测</h3>
+                    <div class="chart-status">
+                        <div class="status-indicator status-active"></div>
+                        <span>一次调频已激活</span>
+                    </div>
+                </div>
+                <div class="chart">
+                    <canvas id="frequency-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">AGC指令跟踪与响应功率</h3>
+                    <div class="chart-status warning">
+                        <div class="status-indicator status-active"></div>
+                        <span>有指令偏差</span>
+                    </div>
+                </div>
+                <div class="chart">
+                    <canvas id="agc-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">储能系统调频功率分解</h3>
+                    <div class="chart-status">
+                        <div class="status-indicator status-active"></div>
+                        <span>充放电正常</span>
+                    </div>
+                </div>
+                <div class="chart">
+                    <canvas id="power-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="events-panel">
+                <div class="events-header">
+                    <h3>调频事件日志</h3>
+                    <div class="tab-container">
+                        <div class="tab active">所有事件</div>
+                        <div class="tab">一次调频</div>
+                        <div class="tab">二次调频</div>
+                        <div class="tab">告警事件</div>
+                    </div>
+                </div>
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>时间戳</th>
+                            <th>事件类型</th>
+                            <th>频率偏差/AGC指令</th>
+                            <th>响应功率</th>
+                            <th>延迟时间</th>
+                            <th>精度偏差</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>11:43:28</td>
+                            <td>AGC调节</td>
+                            <td>-3.1 MW</td>
+                            <td>-2.8 MW</td>
+                            <td>248 ms</td>
+                            <td>9.7%</td>
+                            <td>完成</td>
+                        </tr>
+                        <tr>
+                            <td>11:42:15</td>
+                            <td>频率调节</td>
+                            <td>-0.07 Hz</td>
+                            <td>+2.4 MW</td>
+                            <td>195 ms</td>
+                            <td class="event-critical">13.5%</td>
+                            <td class="event-critical">偏差超标</td>
+                        </tr>
+                        <tr>
+                            <td>11:40:02</td>
+                            <td>AGC调节</td>
+                            <td>+1.8 MW</td>
+                            <td>+1.5 MW</td>
+                            <td>203 ms</td>
+                            <td>16.7%</td>
+                            <td class="event-warning">调节缓慢</td>
+                        </tr>
+                        <tr>
+                            <td>11:38:57</td>
+                            <td class="event-critical">大扰动事件</td>
+                            <td class="event-critical">-0.24 Hz</td>
+                            <td class="event-critical">+4.5 MW</td>
+                            <td>175 ms</td>
+                            <td>6.2%</td>
+                            <td>完成</td>
+                        </tr>
+                        <tr>
+                            <td>11:36:41</td>
+                            <td>频率调节</td>
+                            <td>+0.05 Hz</td>
+                            <td>-1.2 MW</td>
+                            <td>189 ms</td>
+                            <td>8.3%</td>
+                            <td>完成</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <div>
+                <h3>调频模式设置</h3>
+                <div class="form-group">
+                    <div class="toggle-container">
+                        <span class="toggle-label">一次调频 (FR)</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-container">
+                        <span class="toggle-label">二次调频 (AGC)</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3>一次调频参数</h3>
+                <div class="form-group">
+                    <label for="deadband">频率死区 (±Hz)</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="deadband" value="0.05" min="0.01" max="0.1" step="0.01">
+                        <span class="input-unit">Hz</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="droop">调差系数 (%)</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="droop" value="5.0" min="1" max="10" step="0.5">
+                        <span class="input-unit">%</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max-power">最大响应功率</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="max-power" value="5.0" min="0.5" max="20" step="0.1">
+                        <span class="input-unit">MW</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ramp-rate">响应速度</label>
+                    <div class="input-with-unit">
+                        <input type="range" id="ramp-rate" min="0.1" max="5" step="0.1" value="2.5" class="slider-input">
+                        <span class="input-unit">2.5 MW/s</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3>二次调频参数</h3>
+                <div class="form-group">
+                    <label for="agc-source">AGC指令源</label>
+                    <select id="agc-source" class="input-with-unit" style="width:100%; padding:12px 15px; background-color:#1e293b; border:1px solid #334155; border-radius:6px; color:#e2e8f0;">
+                        <option>省级调度中心AGC</option>
+                        <option>区域调度中心AGC</option>
+                        <option>互联电网AGC</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="agc-accuracy">调节精度要求</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="agc-accuracy" value="5.0" min="1" max="10" step="0.5">
+                        <span class="input-unit">%</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="soc-recovery">SOC恢复策略</label>
+                    <select id="soc-recovery" class="input-with-unit" style="width:100%; padding:12px 15px; background-color:#1e293b; border:1px solid #334155; border-radius:6px; color:#e2e8f0;">
+                        <option>调频间歇期充电</option>
+                        <option>放电优先，低谷充电</option>
+                        <option>动态平衡策略</option>
+                        <option>根据电价优化</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <h3>通用参数</h3>
+                <div class="form-group">
+                    <label for="soc-range">SOC调频可用范围</label>
+                    <div class="input-with-unit">
+                        <input type="text" id="soc-range" value="20% - 90%" readonly style="background-color:#1e293b; cursor:not-allowed;">
+                        <span class="input-unit"></span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="power-strategy">调频功率分配策略</label>
+                    <select id="power-strategy" class="input-with-unit" style="width:100%; padding:12px 15px; background-color:#1e293b; border:1px solid #334155; border-radius:6px; color:#e2e8f0;">
+                        <option>按额定功率比例分配</option>
+                        <option>按SOC比例分配</option>
+                        <option>轮巡调度</option>
+                        <option>性能优先</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn btn-apply">
+                <i class="fas fa-save"></i>
+                应用参数设置
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 更新日期和时间
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('current-date').textContent = 
+                `${now.getFullYear()}年${(now.getMonth() + 1).toString().padStart(2, '0')}月${now.getDate().toString().padStart(2, '0')}日`;
+            document.getElementById('current-time').textContent = 
+                `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }
+        
+        // 初始化时间显示并每秒更新一次
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+        
+        // 创建图表
+        function createCharts() {
+            // 电网频率曲线
+            const freqCtx = document.getElementById('frequency-chart').getContext('2d');
+            const labels = [];
+            for (let i = 0; i < 60; i++) {
+                labels.push(`${i}s`);
+            }
+            
+            const freqChart = new Chart(freqCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '电网频率 (Hz)',
+                            data: generateWaveform(49.95, 0.1, 0.05),
+                            borderColor: 'rgb(82, 201, 255)',
+                            backgroundColor: 'rgba(82, 201, 255, 0.1)',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: '频率上限',
+                            data: Array(60).fill(50.05),
+                            borderColor: 'rgba(255, 107, 107, 0.6)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: '频率下限',
+                            data: Array(60).fill(49.95),
+                            borderColor: 'rgba(255, 107, 107, 0.6)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            min: 49.90,
+                            max: 50.10,
+                            title: {
+                                display: true,
+                                text: '频率 (Hz)'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 0
+                    }
+                }
+            });
+            
+            // AGC指令跟踪曲线
+            const agcCtx = document.getElementById('agc-chart').getContext('2d');
+            const agcData = [];
+            for (let i = 0; i < 60; i++) {
+                agcData.push(Math.sin(i * 0.2) * 3);
+            }
+            
+            const agcChart = new Chart(agcCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                            label: 'AGC指令',
+                            data: agcData,
+                            borderColor: '#e0c3fc',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'VPP响应功率',
+                            data: generateLaggedData(agcData, 5),
+                            borderColor: '#64ffda',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '功率 (MW)'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 0
+                    }
+                }
+            });
+            
+            // 功率分解图
+            const powerCtx = document.getElementById('power-chart').getContext('2d');
+            const timeLabels = [];
+            for (let i = 0; i < 20; i++) {
+                timeLabels.push(i);
+            }
+            
+            const chargeData = Array(20).fill(0).map(() => Math.random() > 0.65 ? -Math.random() * 2 : 0);
+            const dischargeData = Array(20).fill(0).map(() => Math.random() > 0.7 ? Math.random() * 3 : 0);
+            
+            const powerChart = new Chart(powerCtx, {
+                type: 'bar',
+                data: {
+                    labels: timeLabels,
+                    datasets: [
+                        {
+                            label: '充电功率',
+                            data: chargeData,
+                            backgroundColor: 'rgba(114, 192, 255, 0.7)',
+                            borderWidth: 0
+                        },
+                        {
+                            label: '放电功率',
+                            data: dischargeData,
+                            backgroundColor: 'rgba(255, 100, 130, 0.7)',
+                            borderWidth: 0
+                        },
+                        {
+                            label: '总响应功率',
+                            data: chargeData.map((val, idx) => val + dischargeData[idx]),
+                            type: 'line',
+                            borderColor: '#f7d06d',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '功率 (MW)'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 0
+                    }
+                }
+            });
+            
+            // 为实时更新准备数据流
+            let count = 0;
+            setInterval(() => {
+                // 更新频率图
+                count++;
+                const newData = [...freqChart.data.datasets[0].data.slice(1), generateNext(50, 0.1, count)];
+                freqChart.data.datasets[0].data = newData;
+                freqChart.update();
+                
+                // 更新AGC图
+                const agcTarget = Math.sin(count * 0.2) * 3;
+                const agcResponse = generateLaggedData([agcTarget], 4, agcChart.data.datasets[1].data)[0];
+                
+                agcChart.data.datasets[0].data = [...agcChart.data.datasets[0].data.slice(1), agcTarget];
+                agcChart.data.datasets[1].data = [...agcChart.data.datasets[1].data.slice(1), agcResponse];
+                agcChart.update();
+                
+                // 更新功率图
+                const newCharge = [...powerChart.data.datasets[0].data.slice(1), generatePowerData(powerChart.data.datasets[0].data[19], 'charge')];
+                const newDischarge = [...powerChart.data.datasets[1].data.slice(1), generatePowerData(powerChart.data.datasets[1].data[19], 'discharge')];
+                
+                powerChart.data.datasets[0].data = newCharge;
+                powerChart.data.datasets[1].data = newDischarge;
+                powerChart.data.datasets[2].data = newCharge.map((val, idx) => val + newDischarge[idx]);
+                powerChart.update();
+                
+                // 更新部分KPI卡数据
+                if (count % 2 === 0) {
+                    const freqCards = document.querySelectorAll('.kpi-card');
+                    // 频率值更新
+                    freqCards[0].querySelector('.kpi-value').textContent = newData[newData.length - 1].toFixed(2) + ' Hz';
+                    
+                    // AGC值更新 (取最后三个点的平均使波动更平滑)
+                    const agcPoints = agcChart.data.datasets[0].data.slice(-3);
+                    const avgAgc = (agcPoints.reduce((a, b) => a + b, 0) / agcPoints.length).toFixed(1);
+                    freqCards[1].querySelector('.kpi-value').textContent = (avgAgc > 0 ? '+' : '') + avgAgc + ' MW';
+                    
+                    // SOC更新 (逐渐降低)
+                    const socCard = freqCards[3];
+                    const currentSoc = parseFloat(socCard.querySelector('.kpi-value').textContent);
+                    const newSoc = Math.max(15.0, currentSoc - 0.15);
+                    socCard.querySelector('.kpi-value').textContent = newSoc.toFixed(1) + '%';
+                    
+                    // 在SOC低于20%时添加警告样式
+                    if (newSoc < 20 && !socCard.classList.contains('critical')) {
+                        socCard.classList.add('critical');
+                        document.querySelector('.alert-banner').classList.remove('hidden');
+                    } else if (newSoc >= 20 && socCard.classList.contains('critical')) {
+                        socCard.classList.remove('critical');
+                        document.querySelector('.alert-banner').classList.add('hidden');
+                    }
+                }
+            }, 1000);
+        }
+        
+        // 生成电网频率波形
+        function generateWaveform(base, amplitude, offset) {
+            const data = [];
+            for (let i = 0; i < 60; i++) {
+                data.push(base + Math.sin(i * 0.3) * amplitude + offset);
+            }
+            return data;
+        }
+        
+        // 生成下一个频率点
+        function generateNext(base, amplitude, offset) {
+            return base + Math.sin((offset + 60) * 0.3) * amplitude + offset/300;
+        }
+        
+        // 生成有滞后的响应数据
+        function generateLaggedData(targetData, lagPoints = 3, prevData) {
+            if (!prevData) return targetData;
+            
+            const newValue = prevData.length > 0 
+                ? prevData[prevData.length - 1] * 0.7 + targetData[targetData.length - 1] * 0.3
+                : targetData[0];
+            return [...prevData.slice(1), newValue];
+        }
+        
+        // 生成功率数据
+        function generatePowerData(prevValue, type) {
+            const rnd = Math.random();
+            
+            if (type === 'charge') {
+                return rnd > 0.85 ? -Math.random() * 2.5 : 0;
+            } else {
+                return rnd > 0.8 ? Math.random() * 3.0 : 0;
+            }
+        }
+        
+        // 初始化图表和实时更新
+        window.onload = function() {
+            createCharts();
+            
+            // 标签点击事件
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                });
+            });
+            
+            // 响应速度滑块事件
+            const rampRate = document.getElementById('ramp-rate');
+            const rampRateDisplay = rampRate.nextElementSibling;
+            rampRate.addEventListener('input', () => {
+                rampRateDisplay.textContent = rampRate.value + ' MW/s';
+            });
+        };
+    </script>
+</body>
+</html>

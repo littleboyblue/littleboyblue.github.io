@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电力交易结算系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a56db;
+            --secondary-color: #0e9f6e;
+            --danger-color: #e02424;
+            --warning-color: #f59e0b;
+            --info-color: #3f83f8;
+            --light-bg: #f3f4f6;
+            --border-color: #e5e7eb;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+        
+        .page-title {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: white;
+        }
+        
+        /* 顶部筛选区样式 */
+        .filters-section {
+            background-color: white;
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        /* 概览看板样式 */
+        .dashboard {
+            padding: 1.5rem;
+            background-color: white;
+            margin: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .dashboard-widget {
+            background: var(--light-bg);
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            height: 100%;
+        }
+        
+        .value-display {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+        
+        .positive { color: var(--secondary-color); }
+        .negative { color: var(--danger-color); }
+        .metric-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            height: 100%;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        /* 列表和表格样式 */
+        .content-section {
+            margin: 1rem;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .summary-table {
+            width: 100%;
+        }
+        
+        .summary-table th {
+            background-color: #eff6ff;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+        }
+        
+        .summary-table td {
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-warning { background: #fffbeb; color: #b45309; }
+        .status-confirmed { background: #d1fae5; color: #065f46; }
+        .status-dispute { background: #fee2e2; color: #b91c1c; }
+        
+        /* 详情视图样式 */
+        .detail-view {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            display: none; /* 默认隐藏 */
+        }
+        
+        .detail-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+        
+        .detail-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+        
+        /* 标签样式 */
+        .label {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .label-blue { background: #dbeafe; color: #1e40af; }
+        .label-green { background: #dcfce7; color: #166534; }
+        .label-red { background: #fee2e2; color: #b91c1c; }
+        .label-yellow { background: #fef9c3; color: #854d0e; }
+        
+        /* 按钮样式 */
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        /* 进度条样式 */
+        .progress-container {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.25rem;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            width: 65%; /* 示例进度 */
+        }
+        
+        /* 表格操作列样式 */
+        .actions-cell {
+            white-space: nowrap;
+        }
+        
+        /* 底部工具条 */
+        .toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            z-index: 100;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-color);
+        }
+        
+        .grid-stack {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部标题 -->
+    <div class="page-title">
+        <h1 class="h3 fw-bold">电力交易结算系统</h1>
+    </div>
+    
+    <!-- 筛选区域 -->
+    <div class="filters-section">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">结算周期</label>
+                <div class="input-group">
+                    <input type="date" class="form-control">
+                    <select class="form-select">
+                        <option value="day">按日</option>
+                        <option value="month">按月</option>
+                        <option value="quarter">按季</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">市场类型</label>
+                <select class="form-select">
+                    <option value="">全部市场</option>
+                    <option value="DA">日前市场(DA)</option>
+                    <option value="ID">实时市场(ID)</option>
+                    <option value="RT">实时市场(RT)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">结算状态</label>
+                <select class="form-select">
+                    <option value="">全部状态</option>
+                    <option value="pending">结果待确认</option>
+                    <option value="warning">数据异常预警待处理</option>
+                    <option value="toconfirm">结算单待确认</option>
+                    <option value="confirmed">结算单已确认</option>
+                    <option value="dispute">争议中</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary me-2" style="flex:1">
+                    <i class="fas fa-sync-alt me-1"></i> 查询
+                </button>
+                <button class="btn btn-outline-primary">
+                    <i class="fas fa-download me-1"></i> 导入
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 概览看板 -->
+    <div class="dashboard">
+        <div class="grid-stack">
+            <div class="g-col-12 g-col-md-5">
+                <div class="dashboard-widget">
+                    <h5 class="text-muted mb-3">累计结算收入/支出</h5>
+                    <div class="row">
+                        <div class="col">
+                            <div class="text-muted small">今日收入</div>
+                            <div class="value-display positive">$2,850,437</div>
+                            <div class="text-success small">↑ 12.5%</div>
+                        </div>
+                        <div class="col">
+                            <div class="text-muted small">今日支出</div>
+                            <div class="value-display negative">$968,409</div>
+                            <div class="text-danger small">↑ 3.2%</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="g-col-12 g-col-md-3">
+                <div class="dashboard-widget h-100">
+                    <h5 class="text-muted mb-3">资源结算占比</h5>
+                    <div class="chart-container">
+                        <canvas id="resourcePieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="g-col-12 g-col-md-4">
+                <div class="row g-3 h-100">
+                    <div class="col-12">
+                        <div class="metric-card d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">已开票金额</div>
+                                    <div class="fs-4 fw-bold mt-1"><span class="positive">$1.78M</span> / $2.23M</div>
+                                </div>
+                                <div class="bg-primary-subtle rounded p-2">
+                                    <i class="fas fa-receipt fa-2x text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="progress-container mt-3">
+                                <div class="progress-bar" style="width: 80%"></div>
+                            </div>
+                            <div class="mt-2 small text-muted">开票进度：79.8%</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="metric-card d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small">已回款金额</div>
+                                    <div class="fs-4 fw-bold mt-1"><span class="positive">$1.31M</span> / $1.78M</div>
+                                </div>
+                                <div class="bg-success-subtle rounded p-2">
+                                    <i class="fas fa-hand-holding-usd fa-2x text-success"></i>
+                                </div>
+                            </div>
+                            <div class="progress-container mt-3">
+                                <div class="progress-bar" style="width: 62%; background: var(--secondary-color);"></div>
+                            </div>
+                            <div class="mt-2 small text-muted">回款进度：61.8%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主体内容 - 结算列表 -->
+    <div class="content-section">
+        <div class="table-container">
+            <div class="p-3 bg-light d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="mb-0">结算结果列表</h6>
+                <button class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-sync-alt me-1"></i> 刷新结算数据
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>结算周期</th>
+                            <th>市场类型</th>
+                            <th>结算状态</th>
+                            <th>总收益/支出</th>
+                            <th>总中标量(MWh)</th>
+                            <th>资源数/类型</th>
+                            <th>异常标识</th>
+                            <th>争议标识</th>
+                            <th class="text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2023-11-01</td>
+                            <td>DA</td>
+                            <td><span class="status-badge status-confirmed">结算单已确认</span></td>
+                            <td class="positive">$895,324</td>
+                            <td>38,421</td>
+                            <td>24 / 风+光+储能</td>
+                            <td><span class="label label-green">无异常</span></td>
+                            <td><span class="label label-green">无争议</span></td>
+                            <td class="actions-cell">
+                                <button class="btn btn-sm btn-outline-primary view-detail" data-id="1">详情</button>
+                                <button class="btn btn-sm btn-success">确认</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2023-11-01</td>
+                            <td>ID</td>
+                            <td><span class="status-badge status-warning">数据异常待处理</span></td>
+                            <td class="negative">$123,870</td>
+                            <td>23,791</td>
+                            <td>18 / 火电+储能</td>
+                            <td><span class="label label-red">3项异常</span></td>
+                            <td><span class="label label-yellow">1项争议</span></td>
+                            <td class="actions-cell">
+                                <button class="btn btn-sm btn-outline-primary view-detail" data-id="2">详情</button>
+                                <button class="btn btn-sm btn-warning">处理</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2023-10-26~11-01</td>
+                            <td>RT</td>
+                            <td><span class="status-badge status-pending">结果待确认</span></td>
+                            <td class="positive">$1,236,419</td>
+                            <td>110,423</td>
+                            <td>38 / 综合</td>
+                            <td><span class="label label-green">无异常</span></td>
+                            <td><span class="label label-green">无争议</span></td>
+                            <td class="actions-cell">
+                                <button class="btn btn-sm btn-outline-primary view-detail" data-id="3">详情</button>
+                                <button class="btn btn-sm btn-outline-secondary">核对</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2023-10-25</td>
+                            <td>DA</td>
+                            <td><span class="status-badge status-dispute">争议中</span></td>
+                            <td class="negative">$56,802</td>
+                            <td>14,290</td>
+                            <td>12 / 新能源</td>
+                            <td><span class="label label-yellow">1项异常</span></td>
+                            <td><span class="label label-red">争议处理中</span></td>
+                            <td class="actions-cell">
+                                <button class="btn btn-sm btn-outline-primary view-detail" data-id="4">详情</button>
+                                <button class="btn btn-sm btn-danger">追踪</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-3 bg-light d-flex justify-content-between align-items-center border-top">
+                <div class="text-muted small">共 4 条记录</div>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary me-1">
+                        <i class="fas fa-cogs me-1"></i> 异常检查
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-bell me-1"></i> 发送预警
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 结算单详情视图 - 默认折叠 -->
+        <div id="detailView" class="detail-view">
+            <div class="position-relative">
+                <div class="detail-actions">
+                    <button class="btn btn-sm btn-success me-1">
+                        <i class="fas fa-check me-1"></i> 确认结算
+                    </button>
+                    <button class="btn btn-sm btn-danger me-1">
+                        <i class="fas fa-exclamation-triangle me-1"></i> 发起争议
+                    </button>
+                    <button class="btn btn-sm btn-secondary">
+                        <i class="fas fa-file-export me-1"></i> 导出结算单
+                    </button>
+                </div>
+                
+                <div class="detail-header">
+                    结算单详情 - #ST20231001-DA
+                    <div class="text-muted small mt-1">结算周期: 2023-11-01 | 市场类型: DA | 状态: <span class="status-badge status-confirmed">结算单已确认</span></div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">结算单头信息</h6>
+                                <div class="row small">
+                                    <div class="col-5 text-muted">结算单号:</div>
+                                    <div class="col-7">ST20231001-DA</div>
+                                    
+                                    <div class="col-5 text-muted">结算周期:</div>
+                                    <div class="col-7">2023-11-01 00:00 ~ 2023-11-01 24:00</div>
+                                    
+                                    <div class="col-5 text-muted">结算日期:</div>
+                                    <div class="col-7">2023-11-03 14:30:21</div>
+                                    
+                                    <div class="col-5 text-muted">制单人:</div>
+                                    <div class="col-7">张伟 (zhangwei@energy.com)</div>
+                                    
+                                    <div class="col-5 text-muted">确认人:</div>
+                                    <div class="col-7">李明 (liming@energy.com)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">结算结果摘要</h6>
+                                <div class="d-flex justify-content-around text-center">
+                                    <div>
+                                        <div class="text-muted small">合计结算电量</div>
+                                        <div class="fw-bold fs-5">38,421 MWh</div>
+                                        <div class="small">买入: 2,842 MWh | 卖出: 35,579 MWh</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">结算总金额</div>
+                                        <div class="fw-bold fs-5 positive">$895,324</div>
+                                        <div class="small">收入: $1,023,810 | 支出: $128,486</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">加权平均电价</div>
+                                        <div class="fw-bold fs-5">$23.30 / MWh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tabs mb-3">
+                    <div class="tab active">电费明细</div>
+                    <div class="tab">时段级结算数据</div>
+                    <div class="tab">资源分解</div>
+                    <div class="tab">数据核对</div>
+                    <div class="tab">争议管理</div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted mb-3">结算电费明细拆解</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>费用类型</th>
+                                        <th>计算公式</th>
+                                        <th>费用金额 ($)</th>
+                                        <th>比例</th>
+                                        <th>说明</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>能量费用</td>
+                                        <td>中标量 × 出清价</td>
+                                        <td class="positive">+$1,023,810</td>
+                                        <td>87.5%</td>
+                                        <td>基于中标量和出清价计算</td>
+                                    </tr>
+                                    <tr>
+                                        <td>偏差考核费用</td>
+                                        <td>偏差量 × 惩罚系数</td>
+                                        <td class="negative">-$78,960</td>
+                                        <td>6.7%</td>
+                                        <td>超短期预测偏差惩罚</td>
+                                    </tr>
+                                    <tr>
+                                        <td>辅助服务分摊费用</td>
+                                        <td>固定分摊</td>
+                                        <td class="negative">-$32,406</td>
+                                        <td>2.8%</td>
+                                        <td>调频辅助服务分摊</td>
+                                    </tr>
+                                    <tr>
+                                        <td>输配电费</td>
+                                        <td>电量 × 过网费单价</td>
+                                        <td class="negative">-$15,345</td>
+                                        <td>1.3%</td>
+                                        <td>跨区过网费用</td>
+                                    </tr>
+                                    <tr>
+                                        <td>其他费用</td>
+                                        <td>交易服务费</td>
+                                        <td class="negative">-$1,775</td>
+                                        <td>0.15%</td>
+                                        <td>交易平台服务费用</td>
+                                    </tr>
+                                    <tr class="fw-bold">
+                                        <td>结算总费用</td>
+                                        <td colspan="2" class="positive">$895,324</td>
+                                        <td>100%</td>
+                                        <td>实际结算收入</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning d-flex align-items-center">
+                    <i class="fas fa-exclamation-circle fa-2x me-2"></i>
+                    <div>
+                        <strong>请注意：</strong> 此结算单包含了两个偏差考核异常点，请验证时段 14:45-15:00 和 21:00-21:15 的预测数据准确性，但也可能由市场侧计量系统故障引起。
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <button id="closeDetail" class="btn btn-outline-secondary"><i class="fas fa-times me-1"></i> 关闭详情</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部工具条 -->
+    <div class="toolbar">
+        <div>
+            <button class="btn btn-primary me-2">
+                <i class="fas fa-cloud-download-alt me-1"></i> 调用结算数据
+            </button>
+            <button class="btn btn-warning me-2">
+                <i class="fas fa-exclamation-triangle me-1"></i> 数据异常检查
+            </button>
+            <button class="btn btn-success">
+                <i class="fas fa-file-invoice-dollar me-1"></i> 生成开票申请
+            </button>
+        </div>
+        <div>
+            <button class="btn btn-light me-2">
+                <i class="fas fa-history me-1"></i> 操作日志
+            </button>
+            <button class="btn btn-light">
+                <i class="fas fa-question-circle me-1"></i> 帮助
+            </button>
+        </div>
+    </div>
+    
+
+    <script>
+        // Charts Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // 收入支出趋势图
+            const revCtx = document.getElementById('revenueTrendChart').getContext('2d');
+            new Chart(revCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['10/24', '10/25', '10/26', '10/27', '10/28', '10/30', '10/31', '今日'],
+                    datasets: [
+                        {
+                            label: '收入',
+                            data: [2450000, 2120000, 2780000, 2630000, 1950000, 2810000, 2530000, 2850000],
+                            backgroundColor: 'rgba(14, 159, 110, 0.3)',
+                            borderColor: 'rgba(14, 159, 110, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '支出',
+                            data: [820000, 780000, 910000, 865000, 930000, 890000, 940000, 970000],
+                            backgroundColor: 'rgba(224, 36, 36, 0.3)',
+                            borderColor: 'rgba(224, 36, 36, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 资源结算分布饼图
+            const pieCtx = document.getElementById('resourcePieChart').getContext('2d');
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['风电', '光伏', '火电', '水电', '储能'],
+                    datasets: [{
+                        data: [35, 28, 18, 12, 7],
+                        backgroundColor: [
+                            '#4299e1',
+                            '#48bb78',
+                            '#f59e0b',
+                            '#0bc5ea',
+                            '#9f7aea'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+            
+            // Detail view toggle
+            const viewDetailBtns = document.querySelectorAll('.view-detail');
+            const detailView = document.getElementById('detailView');
+            const closeBtn = document.getElementById('closeDetail');
+            
+            viewDetailBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    detailView.style.display = 'block';
+                    document.body.scrollTop = detailView.offsetTop - 20;
+                    document.documentElement.scrollTop = detailView.offsetTop - 20;
+                });
+            });
+            
+            closeBtn.addEventListener('click', () => {
+                detailView.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟电厂交易结算管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --secondary: #34a853;
+            --warning: #f9ab00;
+            --danger: #ea4335;
+            --light-bg: #f8f9fa;
+            --border: #e0e0e0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(120deg, #1a73e8, #0d5cbf);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.07);
+            margin-bottom: 25px;
+            border: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            background-color: #fff;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            font-weight: 600;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0 !important;
+            color: #1a73e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header-bg {
+            background: linear-gradient(to right, rgba(26, 115, 232, 0.1), rgba(26, 115, 232, 0.05));
+        }
+        
+        .summary-cards .card {
+            height: 100%;
+        }
+        
+        .summary-card {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .summary-card i {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+        
+        .summary-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .summary-card .label {
+            font-size: 1rem;
+            color: #666;
+            letter-spacing: 0.5px;
+        }
+        
+        .profit {
+            color: var(--secondary);
+        }
+        
+        .cost {
+            color: var(--danger);
+        }
+        
+        .positive {
+            color: var(--secondary);
+            background-color: rgba(52, 168, 83, 0.1);
+        }
+        
+        .negative {
+            color: var(--danger);
+            background-color: rgba(234, 67, 53, 0.1);
+        }
+        
+        .chart-container {
+            height: 320px;
+            margin: 10px 0;
+        }
+        
+        .action-bar {
+            background: linear-gradient(to right, #f8f9fa, #eef2f7);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .data-status {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid rgba(0,0,0,0.06);
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .synced {
+            background-color: var(--secondary);
+        }
+        
+        .pending {
+            background-color: var(--warning);
+        }
+        
+        .error {
+            background-color: var(--danger);
+        }
+        
+        .btn-custom {
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 500;
+        }
+        
+        .time-range {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .time-item {
+            text-align: center;
+            padding: 8px;
+            background: rgba(26, 115, 232, 0.06);
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        
+        .time-item:hover, .time-item.active {
+            background: rgba(26, 115, 232, 0.15);
+        }
+        
+        .time-item strong {
+            display: block;
+            font-size: 1.2rem;
+        }
+        
+        .filter-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 10px;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(45deg, rgba(26, 115, 232, 0.06), rgba(26, 115, 232, 0.03));
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="#">
+                <i class="fas fa-bolt me-2" style="color: #ffcc00;"></i>
+                <span>虚拟电厂交易结算系统</span>
+            </a>
+            <div class="d-flex">
+                <div class="dropdown me-3">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user me-2"></i>管理员
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>个人设置</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="dashboard-header shadow-sm">
+            <h3><i class="fas fa-chart-line me-2"></i>交易结算分析</h3>
+            <p class="mb-0">数据更新于：2023年6月15日 19:45:32</p>
+        </div>
+        
+        <!-- 操作栏 -->
+        <div class="action-bar">
+            <div class="row align-items-center">
+                <div class="col-lg-3 mb-3 mb-lg-0">
+                    <div>
+                        <label class="form-label text-muted">结算周期</label>
+                        <div class="input-group">
+                            <select class="form-select">
+                                <option>日内结算</option>
+                                <option selected>周结算</option>
+                                <option>月结算</option>
+                                <option>季度结算</option>
+                            </select>
+                            <button class="btn btn-primary"><i class="fas fa-calendar-day me-2"></i>2023-06</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 mb-3 mb-lg-0">
+                    <div class="d-flex justify-content-center">
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary btn-custom"><i class="fas fa-sync-alt me-2"></i>刷新数据</button>
+                            <button class="btn btn-primary btn-custom"><i class="fas fa-check-circle me-2"></i>核对确认</button>
+                            <button class="btn btn-outline-primary btn-custom"><i class="fas fa-file-export me-2"></i>导出结算单</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-outline-danger btn-custom me-2"><i class="fas fa-exclamation-triangle me-2"></i>发起争议</button>
+                        <button class="btn btn-outline-success btn-custom"><i class="fas fa-lightbulb me-2"></i>分析报告</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 数据源状态 -->
+            <div class="data-status">
+                <div class="me-4">
+                    <span class="status-badge synced"></span> 市场结算单: 已同步 (更新于: 2023-06-15 18:30)
+                </div>
+                <div class="me-4">
+                    <span class="status-badge synced"></span> 计量数据: 已同步 (更新于: 2023-06-15 19:05)
+                </div>
+                <div>
+                    <span class="status-badge pending"></span> SCADA数据: 同步中 (预计完成 19:45)
+                </div>
+            </div>
+        </div>
+        
+        <!-- 时间选择器 -->
+        <div class="time-range">
+            <h5><i class="fas fa-clock me-2" style="color: #1a73e8;"></i>时间范围选择：2023年6月15日 (周四)</h5>
+            <div class="time-grid">
+                <div class="time-item"><strong>00:00</strong>午夜</div>
+                <div class="time-item"><strong>04:00</strong>谷时</div>
+                <div class="time-item active"><strong>08:00</strong>峰始</div>
+                <div class="time-item"><strong>12:00</strong>中午</div>
+                <div class="time-item"><strong>16:00</strong>峰值</div>
+                <div class="time-item"><strong>20:00</strong>晚间</div>
+                <div class="time-item"><strong>22:00</strong>谷始</div>
+                <div class="time-item"><strong>23:45</strong>结束</div>
+            </div>
+            <div class="filter-section">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="autoUpdate" checked>
+                    <label class="form-check-label" for="autoUpdate">自动更新实时数据</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结算概览卡片 -->
+        <div class="row summary-cards">
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-start border-primary border-4">
+                    <div class="card-body summary-card">
+                        <i class="fas fa-money-bill-wave text-primary"></i>
+                        <div class="value text-primary">¥ 286,500</div>
+                        <div class="label">总售电收入</div>
+                        <div class="mt-3">
+                            <span class="badge bg-primary bg-opacity-10 text-primary">
+                                <i class="fas fa-caret-up me-1"></i>较计划 +4.8%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-start border-danger border-4">
+                    <div class="card-body summary-card">
+                        <i class="fas fa-shopping-cart text-danger"></i>
+                        <div class="value text-danger">¥ 124,300</div>
+                        <div class="label">总购电成本</div>
+                        <div class="mt-3">
+                            <span class="badge bg-danger bg-opacity-10 text-danger">
+                                <i class="fas fa-caret-down me-1"></i>较计划 -2.1%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-start border-success border-4">
+                    <div class="card-body summary-card">
+                        <i class="fas fa-chart-line text-success"></i>
+                        <div class="value text-success">¥ 162,200</div>
+                        <div class="label">净收益</div>
+                        <div class="mt-3">
+                            <span class="badge bg-success bg-opacity-10 text-success">
+                                <i class="fas fa-arrow-up me-1"></i>优于计划 +8.3%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card border-start border-warning border-4">
+                    <div class="card-body summary-card">
+                        <i class="fas fa-car-battery text-warning"></i>
+                        <div class="value text-warning">¥ 8,740</div>
+                        <div class="label">储能净收益</div>
+                        <div class="mt-3">
+                            <span class="badge bg-warning bg-opacity-10 text-warning">
+                                <i class="fas fa-circle-exclamation me-1"></i>偏差率 -5.2%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="highlight-box">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-info-circle me-2"></i>关键洞察</h5>
+                    <p class="mb-0">今日光伏发电量超出预期12.5%，储能系统在高峰时段利用率达到92%，降低了约5.8%的购电成本。</p>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>需关注问题</h5>
+                    <p class="mb-0">08:45-09:15时段实际售电量低于计划值18%，导致收入减少¥2,180。建议检查设备运行状态。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header card-header-bg">
+                        <span><i class="fas fa-exchange-alt me-2"></i>计划与实际净交易功率对比 (15分钟间隔)</span>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light text-dark me-1">日视图</button>
+                            <button class="btn btn-sm btn-primary">时视图</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="transaction-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header card-header-bg">
+                        <span><i class="fas fa-chart-pie me-2"></i>偏差分布分析</span>
+                        <button class="btn btn-sm btn-outline-light text-dark">详细报告</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="deviation-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mt-4">
+                <div class="card">
+                    <div class="card-header card-header-bg">
+                        <span><i class="fas fa-solar-panel me-2"></i>光伏发电计划与实际对比 (15分钟间隔)</span>
+                        <button class="btn btn-sm btn-outline-light text-dark">详情</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="pv-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mt-4">
+                <div class="card">
+                    <div class="card-header card-header-bg">
+                        <span><i class="fas fa-battery-three-quarters me-2"></i>储能SOC状态曲线 (15分钟间隔)</span>
+                        <button class="btn btn-sm btn-outline-light text-dark">详情</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="soc-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p class="mb-0">虚拟电厂交易结算管理系统 &copy; 2023 · 运营数据仅限内部使用</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 生成15分钟间隔时间标签 (00:00 - 23:45)
+        function generateTimeLabels() {
+            const labels = [];
+            for (let hour = 0; hour < 24; hour++) {
+                for (let minute = 0; minute < 60; minute += 15) {
+                    const hourStr = hour.toString().padStart(2, '0');
+                    const minuteStr = minute.toString().padStart(2, '0');
+                    labels.push(`${hourStr}:${minuteStr}`);
+                }
+            }
+            return labels;
+        }
+        
+        // 生成整个白天的复杂数据（96个点）
+        document.addEventListener('DOMContentLoaded', function() {
+            const timeLabels = generateTimeLabels();
+            
+            // 净交易功率图表
+            const transactionChart = echarts.init(document.getElementById('transaction-chart'));
+            const transactionDataPlan = [];
+            const transactionDataActual = [];
+            
+            for (let i = 0; i < timeLabels.length; i++) {
+                const progress = i / timeLabels.length;
+                const hour = parseInt(timeLabels[i].split(':')[0]);
+                
+                // 白天模式（6:00 - 21:00）
+                if (hour >= 6 && hour < 21) {
+                    const variation = Math.sin(progress * Math.PI * 4) * 25;
+                    transactionDataPlan.push(80 + variation);
+                    transactionDataActual.push(70 + variation + (Math.random() * 20 - 10));
+                } 
+                // 夜间模式
+                else if (hour >= 21 || hour < 6) {
+                    const variation = Math.sin(progress * Math.PI) * 20;
+                    transactionDataPlan.push(50 + variation);
+                    transactionDataActual.push(60 + variation + (Math.random() * 15 - 7));
+                }
+            }
+            
+            const transactionOption = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: '{b0}<br />计划: {c0} MW<br />实际: {c1} MW'
+                },
+                legend: {
+                    data: ['计划净交易', '实际净交易'],
+                    bottom: 10
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: timeLabels,
+                    axisLabel: {
+                        interval: 31, // 每8个点显示一个标签 (2小时)
+                        formatter: function(value) {
+                            return value.endsWith('00') ? value : '';
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '功率 (MW)'
+                },
+                dataZoom: [{
+                    type: 'slider',
+                    start: 0,
+                    end: 100,
+                    bottom: 35,
+                    height: 20
+                }],
+                series: [
+                    {
+                        name: '计划净交易',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            width: 3,
+                            type: 'dashed',
+                            color: '#666'
+                        },
+                        data: transactionDataPlan
+                    },
+                    {
+                        name: '实际净交易',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            width: 3,
+                            color: '#1a73e8'
+                        },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(26, 115, 232, 0.4)' },
+                                { offset: 1, color: 'rgba(26, 115, 232, 0.05)' }
+                            ])
+                        },
+                        data: transactionDataActual
+                    }
+                ]
+            };
+            transactionChart.setOption(transactionOption);
+            
+            // 偏差分布图表
+            const deviationChart = echarts.init(document.getElementById('deviation-chart'));
+            const deviationOption = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} 次 ({d}%)'
+                },
+                legend: {
+                    orient: 'horizontal',
+                    bottom: 10,
+                    data: ['预测误差', '设备故障', '策略调整', '外部因素', '计量误差']
+                },
+                color: ['#ea4335', '#f9ab00', '#1a73e8', '#34a853', '#9c27b0'],
+                series: [
+                    {
+                        name: '偏差原因',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['50%', '40%'],
+                        avoidLabelOverlap: true,
+                        itemStyle: {
+                            borderRadius: 8,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: [
+                            { value: 35, name: '预测误差' },
+                            { value: 25, name: '设备故障' },
+                            { value: 20, name: '策略调整' },
+                            { value: 15, name: '外部因素' },
+                            { value: 5, name: '计量误差' }
+                        ]
+                    }
+                ]
+            };
+            deviationChart.setOption(deviationOption);
+            
+            // 光伏发电对比图表
+            const pvChart = echarts.init(document.getElementById('pv-chart'));
+            const pvDataPlan = [];
+            const pvDataActual = [];
+            
+            for (let i = 0; i < timeLabels.length; i++) {
+                const hour = parseInt(timeLabels[i].split(':')[0]);
+                const minute = parseInt(timeLabels[i].split(':')[1]);
+                
+                // 只有白天时间有光伏发电 (6:00 - 20:00)
+                if (hour >= 6 && hour < 20) {
+                    const timeProgress = (hour - 6) * 4 + minute / 15;
+                    const solarFactor = Math.sin(Math.PI * timeProgress / (14 * 4)) * 100;
+                    
+                    pvDataPlan.push(solarFactor + (Math.random() * 15 - 5));
+                    pvDataActual.push(solarFactor * 1.15 + (Math.random() * 15 - 5));
+                } else {
+                    pvDataPlan.push(0);
+                    pvDataActual.push(0);
+                }
+            }
+            
+            const pvOption = {
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['计划光伏发电', '实际光伏发电'],
+                    bottom: 10
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: timeLabels,
+                    axisLabel: {
+                        interval: 31,
+                        formatter: function(value) {
+                            return value.endsWith('00') ? value : '';
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '发电功率 (MW)'
+                },
+                dataZoom: [{
+                    type: 'slider',
+                    start: 0,
+                    end: 100,
+                    bottom: 35,
+                    height: 20
+                }],
+                series: [
+                    {
+                        name: '计划光伏发电',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            width: 3,
+                            type: 'dashed',
+                            color: '#666'
+                        },
+                        data: pvDataPlan
+                    },
+                    {
+                        name: '实际光伏发电',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            width: 3,
+                            color: '#f9ab00'
+                        },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(249, 171, 0, 0.4)' },
+                                { offset: 1, color: 'rgba(249, 171, 0, 0.05)' }
+                            ])
+                        },
+                        data: pvDataActual
+                    }
+                ]
+            };
+            pvChart.setOption(pvOption);
+            
+            // SOC状态曲线
+            const socChart = echarts.init(document.getElementById('soc-chart'));
+            const socDataPlan = [];
+            const socDataActual = [];
+            
+            for (let i = 0; i < timeLabels.length; i++) {
+                const hour = parseInt(timeLabels[i].split(':')[0]);
+                
+                // 计算一天充放电周期
+                const progress = i / timeLabels.length;
+                const planSOC = 40 + 45 * Math.sin(progress * 2 * Math.PI);
+                
+                socDataPlan.push(planSOC);
+                socDataActual.push(planSOC * 0.95 + (Math.random() * 8 - 4));
+                
+                // 确保值在20-95范围内
+                socDataPlan[i] = Math.max(20, Math.min(95, socDataPlan[i]));
+                socDataActual[i] = Math.max(15, Math.min(95, socDataActual[i]));
+            }
+            
+            const socOption = {
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['计划SOC', '实际SOC'],
+                    bottom: 10
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: timeLabels,
+                    axisLabel: {
+                        interval: 31,
+                        formatter: function(value) {
+                            return value.endsWith('00') ? value : '';
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'SOC (%)',
+                    min: 15,
+                    max: 100,
+                    axisLabel: {
+                        formatter: '{value}%'
+                    }
+                },
+                dataZoom: [{
+                    type: 'slider',
+                    start: 0,
+                    end: 100,
+                    bottom: 35,
+                    height: 20
+                }],
+                series: [
+                    {
+                        name: '计划SOC',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            width: 3,
+                            type: 'dashed',
+                            color: '#666'
+                        },
+                        data: socDataPlan
+                    },
+                    {
+                        name: '实际SOC',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            width: 3,
+                            color: '#34a853'
+                        },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(52, 168, 83, 0.3)' },
+                                { offset: 1, color: 'rgba(52, 168, 83, 0.05)' }
+                            ])
+                        },
+                        data: socDataActual
+                    }
+                ]
+            };
+            socChart.setOption(socOption);
+            
+            // 窗口大小变化时重制图表
+            window.addEventListener('resize', function() {
+                transactionChart.resize();
+                deviationChart.resize();
+                pvChart.resize();
+                socChart.resize();
+            });
+        });
+    </script>
+</body>
+</html>

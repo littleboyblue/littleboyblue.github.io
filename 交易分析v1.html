@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易分析仪表盘 | VPP 运营监控系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@2.0.2/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.0.0"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --border: #e2e8f0;
+            --card-bg: #ffffff;
+            --header-bg: #f1f5f9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, var(--dark) 0%, #0f172a 100%);
+            color: white;
+            padding: 20px 0;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .nav-links {
+            padding: 20px 0;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: var(--gray);
+            transition: all 0.2s;
+        }
+        
+        .nav-link.active {
+            background: rgba(37, 99, 235, 0.2);
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .nav-link:hover:not(.active) {
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+        
+        .nav-link i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .nav-text {
+            flex-grow: 1;
+        }
+        
+        .badge {
+            background-color: var(--primary);
+            padding: 0 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        /* 主内容区样式 */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .page-subtitle {
+            font-size: 16px;
+            color: var(--secondary);
+            margin-top: 4px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            background-color: var(--header-bg);
+            border-radius: 8px;
+            padding: 4px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid var(--border);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+        
+        /* 高级筛选面板 */
+        .filter-panel {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        select, .date-input, input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: white;
+        }
+        
+        /* 拖动网格布局 */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-auto-rows: auto;
+            gap: 20px;
+            min-height: 80vh;
+        }
+        
+        .grid-item {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .grid-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .item-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .chart-container {
+            flex: 1;
+            min-height: 300px;
+            position: relative;
+        }
+        
+        /* KPI 卡片样式 */
+        .kpi-grid {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+        
+        .kpi-card {
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        
+        .kpi-title {
+            font-size: 14px;
+            color: var(--secondary);
+        }
+        
+        .kpi-change {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        
+        .up {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+        
+        .down {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .kpi-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 80px;
+            }
+            .nav-text, .logo-text, .badge {
+                display: none;
+            }
+            .logo i {
+                font-size: 28px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .filter-group {
+                min-width: 100%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            .grid-item {
+                grid-column: span 12 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边导航栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-chart-network"></i>
+                    <span class="logo-text">VPP Monitor</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-house"></i>
+                    <span class="nav-text">总览</span>
+                </a>
+                <a href="#" class="nav-link active">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span class="nav-text">交易分析</span>
+                    <span class="badge">10+</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span class="nav-text">资源监控</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span class="nav-text">策略管理</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="nav-text">系统配置</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span class="nav-text">报告中心</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span class="nav-text">帮助中心</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-left">
+                    <h1 class="page-title">交易分析仪表盘</h1>
+                    <div class="page-subtitle">多维度分析历史交易数据，评估策略效果，洞察优化方向</div>
+                </div>
+                <div class="controls">
+                    <div class="btn-group">
+                        <button class="btn btn-outline"><i class="fa-solid fa-calendar-days"></i> 最近7天</button>
+                        <button class="btn btn-outline">本月</button>
+                        <button class="btn">上月</button>
+                        <button class="btn btn-outline">季度</button>
+                        <button class="btn btn-outline">自定义</button>
+                    </div>
+                    <button class="btn"><i class="fa-solid fa-file-export"></i> 导出报告</button>
+                    <button class="btn btn-primary">保存视图</button>
+                </div>
+            </div>
+
+            <!-- 筛选面板 -->
+            <div class="filter-panel">
+                <h2 style="margin-bottom: 20px; font-size: 18px;">数据筛选</h2>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label class="filter-label">日期范围</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="date" class="date-input" value="2023-09-01">
+                            <span style="line-height: 40px;">-</span>
+                            <input type="date" class="date-input" value="2023-09-30">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">策略类型</label>
+                        <select>
+                            <option>全部策略</option>
+                            <option selected>基础套利策略</option>
+                            <option>波动跟随策略</option>
+                            <option>风险对冲策略</option>
+                            <option>预测优化策略</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">天气类型</label>
+                        <select>
+                            <option>全部天气</option>
+                            <option selected>晴天</option>
+                            <option>多云</option>
+                            <option>阴天</option>
+                            <option>雨天</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label class="filter-label">日期属性</label>
+                        <select>
+                            <option>全部日期</option>
+                            <option>工作日</option>
+                            <option selected>周末/节假日</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">偏差原因</label>
+                        <select>
+                            <option>全部原因</option>
+                            <option>预测偏差</option>
+                            <option>设备故障</option>
+                            <option>通信延迟</option>
+                            <option selected>策略逻辑问题</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">特殊事件</label>
+                        <select>
+                            <option>全部时段</option>
+                            <option selected>无事件</option>
+                            <option>高峰事件</option>
+                            <option>低电价事件</option>
+                            <option>系统异常事件</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 数据卡片 -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">累计总收益</div>
+                    <div class="kpi-value">¥1,248,760</div>
+                    <div class="kpi-change up"><i class="fa-solid fa-arrow-up"></i> 12.8% ↑</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">策略平均胜率</div>
+                    <div class="kpi-value">78.6%</div>
+                    <div class="kpi-change up"><i class="fa-solid fa-arrow-up"></i> 5.2% ↑</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">预测误差(电价)</div>
+                    <div class="kpi-value">8.3%</div>
+                    <div class="kpi-change down"><i class="fa-solid fa-arrow-down"></i> 1.4% ↓</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">储能利用率</div>
+                    <div class="kpi-value">86.2%</div>
+                    <div class="kpi-change up"><i class="fa-solid fa-arrow-up"></i> 3.7% ↑</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">单位光伏收益</div>
+                    <div class="kpi-value">¥120.8/MWh</div>
+                    <div class="kpi-change down"><i class="fa-solid fa-arrow-down"></i> 2.1% ↓</div>
+                </div>
+            </div>
+
+            <!-- 图表网格布局 -->
+            <div class="grid-layout">
+                <!-- 净收益趋势 -->
+                <div class="grid-item" style="grid-column: span 8;">
+                    <div class="grid-item-header">
+                        <div class="item-title">净收益趋势 (按周统计)</div>
+                        <div>
+                            <select style="width: auto;">
+                                <option>按日</option>
+                                <option selected>按周</option>
+                                <option>按月</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 策略对比 -->
+                <div class="grid-item" style="grid-column: span 4;">
+                    <div class="grid-item-header">
+                        <div class="item-title">策略收益效果对比</div>
+                        <div>
+                            <select style="width: auto;">
+                                <option selected>基础套利</option>
+                                <option>波动策略</option>
+                                <option>预测策略</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="strategyCompareChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 预测误差分析 -->
+                <div class="grid-item" style="grid-column: span 6;">
+                    <div class="grid-item-header">
+                        <div class="item-title">预测误差多维分析 (光伏/电价/负荷)</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 套利收益分析 -->
+                <div class="grid-item" style="grid-column: span 6;">
+                    <div class="grid-item-header">
+                        <div class="item-title">储能套利收益分析</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="arbitrageChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 偏差根因分析 -->
+                <div class="grid-item" style="grid-column: span 7;">
+                    <div class="grid-item-header">
+                        <div class="item-title">交易偏差根因分析 (按天分布)</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="deviationChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- SOC分析 -->
+                <div class="grid-item" style="grid-column: span 5;">
+                    <div class="grid-item-header">
+                        <div class="item-title">储能SOC运行范围分布</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="socChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟的配置数据
+        const kpiData = [
+            { title: '累计总收益', value: '¥1,248,760', trend: 'up', change: '12.8%' },
+            { title: '策略平均胜率', value: '78.6%', trend: 'up', change: '5.2%' },
+            { title: '预测误差(电价)', value: '8.3%', trend: 'down', change: '1.4%' },
+            { title: '储能利用率', value: '86.2%', trend: 'up', change: '3.7%' },
+            { title: '单位光伏收益', value: '¥120.8/MWh', trend: 'down', change: '2.1%' }
+        ];
+        
+        // 初始化图表
+        document.addEventListener('DOMContentLoaded', function() {
+            // 净收益趋势图
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['8/28', '9/4', '9/11', '9/18', '9/25', '10/2'],
+                    datasets: [{
+                        label: '计划收益',
+                        data: [24500, 25280, 24760, 26840, 26250, 27630],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }, {
+                        label: '实际收益',
+                        data: [23850, 25420, 25180, 27230, 25960, 28120],
+                        borderColor: '#10b981',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: { display: true, text: '收益金额 (元)' }
+                        }
+                    }
+                }
+            });
+            
+            // 策略对比图
+            const strategyCtx = document.getElementById('strategyCompareChart').getContext('2d');
+            new Chart(strategyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['基础套利', '波动策略', '预测策略', '对冲策略'],
+                    datasets: [{
+                        label: '日平均收益',
+                        data: [18500, 19700, 21800, 20450],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(139, 92, 246, 0.7)'
+                        ]
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+            
+            // 预测误差分析图
+            const forecastCtx = document.getElementById('forecastChart').getContext('2d');
+            new Chart(forecastCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['早晨 (6-9点)', '上午 (9-12点)', '午间 (12-14点)', '下午 (14-18点)', '傍晚 (18-21点)', '夜间 (21-24点)'],
+                    datasets: [
+                        {
+                            label: '光伏预测误差',
+                            data: [8.5, 7.2, 6.8, 5.5, 4.3, 3.8],
+                            fill: true,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            pointBackgroundColor: 'rgb(255, 99, 132)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(255, 99, 132)'
+                        },
+                        {
+                            label: '电价预测误差',
+                            data: [5.2, 4.8, 6.2, 7.5, 9.8, 8.5],
+                            fill: true,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            pointBackgroundColor: 'rgb(54, 162, 235)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(54, 162, 235)'
+                        },
+                        {
+                            label: '负荷预测误差',
+                            data: [6.8, 5.3, 7.1, 8.4, 5.9, 4.2],
+                            fill: true,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgb(75, 192, 192)',
+                            pointBackgroundColor: 'rgb(75, 192, 192)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(75, 192, 192)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                }
+            });
+            
+            // 套利收益分析图
+            const arbitrageCtx = document.getElementById('arbitrageChart').getContext('2d');
+            new Chart(arbitrageCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    datasets: [
+                        {
+                            label: '理论最大收益',
+                            data: [8450, 9200, 8950, 9320, 9010, 7820, 7350],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                        },
+                        {
+                            label: '实际套利收益',
+                            data: [7850, 8020, 8230, 8560, 7940, 6730, 6120],
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            title: { display: true, text: '收益金额 (元)' }
+                        }
+                    }
+                }
+            });
+            
+            // 偏差原因分析图
+            const deviationCtx = document.getElementById('deviationChart').getContext('2d');
+            new Chart(deviationCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['9/1', '9/5', '9/9', '9/13', '9/17', '9/21', '9/25', '9/29'],
+                    datasets: [
+                        {
+                            label: '预测偏差',
+                            data: [2400, 2250, 2100, 1950, 3050, 2840, 2350, 2640],
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                        },
+                        {
+                            label: '设备故障',
+                            data: [350, 280, 420, 0, 620, 500, 320, 0],
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                        },
+                        {
+                            label: '策略问题',
+                            data: [680, 780, 920, 850, 650, 740, 880, 910],
+                            backgroundColor: 'rgba(255, 206, 86, 0.7)'
+                        },
+                        {
+                            label: '通信中断',
+                            data: [180, 0, 150, 250, 0, 210, 190, 0],
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true }
+                    }
+                }
+            });
+            
+            // SOC分析图
+            const socCtx = document.getElementById('socChart').getContext('2d');
+            new Chart(socCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '日均SOC值',
+                        data: [
+                            {x: 12, y: 35},
+                            {x: 11, y: 33},
+                            {x: 13, y: 42},
+                            {x: 10, y: 28},
+                            {x: 9, y: 45},
+                            {x: 15, y: 50},
+                            {x: 14, y: 38},
+                            {x: 13.5, y: 42},
+                            {x: 14.2, y: 35},
+                            {x: 15.1, y: 30},
+                            {x: 13, y: 47},
+                            {x: 15.2, y: 52},
+                            {x: 12.7, y: 31},
+                            {x: 9.8, y: 33},
+                            {x: 12.1, y: 39}
+                        ],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: '平均充放电循环次数' },
+                            min: 8,
+                            max: 16
+                        },
+                        y: {
+                            title: { display: true, text: 'SOC维持在20-80%的比例(%)' },
+                            min: 25,
+                            max: 55
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
