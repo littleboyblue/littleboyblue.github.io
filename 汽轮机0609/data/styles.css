@@ -68,6 +68,11 @@
   color:#000000;
   text-align:left;
 }
+.table_cell {
+}
+.sticky_1 {
+  text-align:left;
+}
 .form_hint {
   color:#999999;
 }
