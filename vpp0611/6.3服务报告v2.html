@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟电厂 - 综合功率曲线分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c7873;
+            --secondary-color: #6fb98f;
+            --accent-color: #ff7e5f;
+            --background-color: #f8f9fa;
+            --card-color: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --info-color: #3498db;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 2rem;
+        }
+        
+        .header-container {
+            background: linear-gradient(135deg, #1c5a55, var(--primary-color));
+            color: white;
+            padding: 1.5rem 0 3rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: -30px;
+            position: relative;
+        }
+        
+        .main-title {
+            text-align: center;
+            font-weight: 700;
+            font-size: 2.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 0;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-weight: 300;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0.8rem auto 0;
+        }
+        
+        .card-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .main-card {
+            background: var(--card-color);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            padding: 1.5rem 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            padding-bottom: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .card-title i {
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.2rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-name {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stat-name i {
+            margin-right: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 3px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-top: 1rem;
+        }
+        
+        .legend-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 0 0.5rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+        
+        .legend-text {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        
+        .data-explanation {
+            background: #f8fafc;
+            border-left: 4px solid var(--info-color);
+            padding: 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin-top: 2.5rem;
+        }
+        
+        .explanation-title {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--info-color);
+            margin-bottom: 0.75rem;
+        }
+        
+        .key-points {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .key-points li {
+            padding: 0.35rem 0;
+            position: relative;
+            padding-left: 1.75rem;
+        }
+        
+        .key-points li:before {
+            content: "•";
+            color: var(--info-color);
+            font-weight: bold;
+            position: absolute;
+            left: 1rem;
+        }
+        
+        .footer {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding: 2rem 0 1rem;
+        }
+        
+        .date-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 15px;
+        }
+        
+        .date-filter {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 0.4rem 1rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .date-filter:hover, .date-filter.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .tab-container {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #eff5f9;
+            border-radius: 8px;
+            max-width: max-content;
+        }
+        
+        .tab {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <div class="container">
+            <h1 class="main-title">虚拟电厂综合功率曲线分析</h1>
+            <p class="subtitle">光伏实况、预测、调度指令与实际响应功率的21天趋势分析 (6月1日-6月21日)</p>
+            
+            <div class="date-filters">
+                <div class="date-filter active">最近21天</div>
+                <div class="date-filter">上一周期</div>
+                <div class="date-filter">自定义范围</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container card-container">
+        <!-- 主图表卡片 -->
+        <div class="main-card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-chart-line"></i>综合功率曲线分析</h2>
+                <div class="tab-container">
+                    <div class="tab active">光伏分析</div>
+                    <div class="tab">储能分析</div>
+                    <div class="tab">响应统计</div>
+                </div>
+            </div>
+            
+            <!-- 统计卡片 -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-name"><i class="fas fa-sun"></i> 光伏实际峰值</div>
+                    <div class="stat-value">236.5 MW</div>
+                    <div class="stat-info">6月7日 12:15</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-name"><i class="fas fa-bolt"></i> 指令最大偏差</div>
+                    <div class="stat-value">+18.7 MW</div>
+                    <div class="stat-info">6月4日 14:30</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-name"><i class="fas fa-percent"></i> 平均响应率</div>
+                    <div class="stat-value">97.3%</div>
+                    <div class="stat-info">高于基准 3.2%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-name"><i class="fas fa-lightbulb"></i> 调度完成度</div>
+                    <div class="stat-value">91.6%</div>
+                    <div class="stat-info">未达标任务: 4次</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="powerChart"></canvas>
+            </div>
+            
+            <div class="legend-container">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #FFC300;"></div>
+                    <div class="legend-text">光伏预测曲线</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #FF5733;"></div>
+                    <div class="legend-text">光伏实际出力</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #3498DB; border-style: dashed;"></div>
+                    <div class="legend-text">调度指令曲线</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #27AE60;"></div>
+                    <div class="legend-text">实际响应曲线</div>
+                </div>
+            </div>
+            
+            <div class="data-explanation">
+                <div class="explanation-title"><i class="fas fa-info-circle me-2"></i>数据分析洞察</div>
+                <ul class="key-points">
+                    <li>6月4日-7日晴天期间光伏实际出力显著高于预测值，系统超预期发电能力达到15%</li>
+                    <li>6月12日多云天气导致实际出力比预测低22%，调度系统及时调整指令以减少电网波动</li>
+                    <li>响应曲线在18日、19日有三次较大偏差（＞±10%），分析为储能系统充放电策略异常</li>
+                    <li>预测准确率平均为88.7%，在晴天可达92-95%，阴雨天气下降至80-85%</li>
+                    <li>整个周期内，系统成功完成调度指令94.3%，错过5次短期调峰请求</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            虚拟电厂运营平台 - 数据更新时间: 2025年6月12日 09:35:45 | 
+            <i class="fas fa-shield-alt"></i> 数据安全认证: ISO 27001 | 
+            <span id="currentDate"></span>
+        </div>
+    </div>
+    
+    <script>
+        // 获取当前日期格式化
+        const now = new Date();
+        const formattedDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+        document.getElementById('currentDate').innerText = formattedDate;
+        
+        // 日期标签（1号到21号）
+        const dates = [];
+        for (let i = 1; i <= 12; i++) {
+            dates.push(`6月${i}日`);
+        }
+        
+        // 生成模拟数据
+        const generateData = (min, max, volatility, peaks) => {
+            const data = [];
+            let current = (min + max) / 2;
+            
+            // 添加几个明显的峰值
+            const peakDays = peaks || [5, 7, 12, 18];
+            
+            for (let i = 0; i < 21; i++) {
+                // 如果是峰值日，生成更高的值
+                if (peakDays.includes(i+1)) {
+                    const peakValue = max * (0.85 + Math.random() * 0.15);
+                    data.push(Math.round(peakValue));
+                } else {
+                    // 非线性波动
+                    const change = (Math.random() * 2 - 1) * volatility;
+                    const power = Math.sin(i / 3) * 0.5 + 0.5;
+                    const newValue = current + change * power;
+                    
+                    // 确保数据在范围内
+                    current = Math.min(max, Math.max(min, newValue));
+                    data.push(Math.round(current));
+                }
+            }
+            return data;
+        };
+        
+        // 生成各数据集
+        const predictedData = generateData(180, 280, 12, [5, 7, 12, 15, 19]);
+        const actualData = predictedData.map((val, i) => {
+            // 模拟实际数据比预测有10-30%差异
+            const diff = (Math.random() * 0.4 - 0.2); // -20% to +20%
+            const actualVal = val * (1 + diff);
+            return Math.min(320, Math.max(100, Math.round(actualVal)));
+        });
+        
+        const dispatchData = predictedData.map((val, i) => {
+            // 调度指令通常在预测基础上做调整
+            const adjustment = i < 7 ? 0.95 : i < 14 ? 0.92 : 0.88;
+            return Math.round(val * adjustment);
+        });
+        
+        const responseData = dispatchData.map((val, i) => {
+            // 响应值在指令值附近波动，但接近实际光伏发电能力
+            const target = Math.min(actualData[i], val * (0.98 + Math.random() * 0.04));
+            return Math.round(target);
+        });
+        
+        // 创建功率图表
+        const ctx = document.getElementById('powerChart').getContext('2d');
+        const powerChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '光伏预测曲线',
+                    data: predictedData,
+                    borderColor: '#FFC300',
+                    backgroundColor: 'rgba(255, 195, 0, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    fill: false
+                }, {
+                    label: '光伏实际出力',
+                    data: actualData,
+                    borderColor: '#FF5733',
+                    backgroundColor: 'rgba(255, 87, 51, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    fill: false
+                }, {
+                    label: '调度指令曲线',
+                    data: dispatchData,
+                    borderColor: '#3498DB',
+                    backgroundColor: 'rgba(52, 152, 219, 0.05)',
+                    borderWidth: 2.5,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    tension: 0.3,
+                    fill: false
+                }, {
+                    label: '实际响应曲线',
+                    data: responseData,
+                    borderColor: '#27AE60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y} MW`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 9
+                        }
+                    },
+                    y: {
+                        min: 80,
+                        max: 320,
+                        title: {
+                            display: true,
+                            text: '功率 (MW)',
+                            font: {
+                                size: 13,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 添加点击事件到筛选标签
+        document.querySelectorAll('.date-filter').forEach(filter => {
+            filter.addEventListener('click', function() {
+                document.querySelectorAll('.date-filter').forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 添加点击事件到标签
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

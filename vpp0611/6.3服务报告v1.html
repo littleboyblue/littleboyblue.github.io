@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟电厂服务报告系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c7873;
+            --secondary-color: #6fb98f;
+            --accent-color: #ff7e5f;
+            --background-color: #f5f7fa;
+            --card-color: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a5550);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .filter-bar {
+            background-color: var(--card-color);
+            border-radius: 0 0 10px 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .kpi-card {
+            background-color: var(--card-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+        
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+        
+        .kpi-trend.up {
+            color: var(--success-color);
+        }
+        
+        .kpi-trend.down {
+            color: var(--danger-color);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: 100%;
+            margin-bottom: 2rem;
+        }
+        
+        .report-section {
+            background-color: var(--card-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .heatmap-cell {
+            padding: 12px 8px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .heatmap-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        
+        .action-card {
+            cursor: pointer;
+            transition: all 0.3s;
+            height: 100%;
+        }
+        
+        .action-card:hover {
+            background-color: #f0f9ff;
+        }
+        
+        .card-icon {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            font-size: 1.8rem;
+            margin-right: 10px;
+        }
+        
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--text-secondary), transparent);
+            margin: 1.5rem 0;
+        }
+        
+        .table-title {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航区 -->
+    <nav class="navbar navbar-expand-lg dashboard-header">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-solar-panel logo-icon"></i>
+                <span>虚拟电厂服务平台</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <div class="text-white me-4 d-none d-lg-block">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    <span id="current-date"></span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn bg-white text-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-2"></i>
+                        <span>管理员</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>设置</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-question-circle me-2"></i>帮助</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>退出</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid mt-4">
+        <!-- 全局筛选区 -->
+        <div class="filter-bar">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">时间范围</label>
+                    <select class="form-select">
+                        <option>过去24小时</option>
+                        <option selected>过去7天</option>
+                        <option>本月</option>
+                        <option>上月</option>
+                        <option>本季度</option>
+                        <option>自定义</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">服务类型</label>
+                    <select class="form-select">
+                        <option>全部服务</option>
+                        <option selected>调峰服务</option>
+                        <option>调频服务</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">区域选择</label>
+                    <select class="form-select">
+                        <option selected>全部区域</option>
+                        <option>江苏区域</option>
+                        <option>浙江区域</option>
+                        <option>上海区域</option>
+                        <option>安徽区域</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">聚合单元</label>
+                    <button class="btn btn-outline-primary w-100" type="button">
+                        <i class="fas fa-filter me-2"></i>高级筛选
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- KPI概览区 -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="kpi-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-secondary">总响应电量</h5>
+                            <h2 class="kpi-value text-primary">8,450<span class="fs-6"> MWh</span></h2>
+                            <div class="d-flex align-items-center">
+                                <span class="kpi-trend up me-2"><i class="fas fa-arrow-up me-1"></i>12.3%</span>
+                                <span>较上周</span>
+                            </div>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                            <i class="fas fa-bolt text-primary" style="font-size: 1.8rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="kpi-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-secondary">服务总收益</h5>
+                            <h2 class="kpi-value text-accent">¥ 238.6<span class="fs-6">万</span></h2>
+                            <div class="d-flex align-items-center">
+                                <span class="kpi-trend up me-2"><i class="fas fa-arrow-up me-1"></i>8.7%</span>
+                                <span>较上周</span>
+                            </div>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                            <i class="fas fa-coins text-warning" style="font-size: 1.8rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="kpi-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-secondary">响应率</h5>
+                            <h2 class="kpi-value text-success">96.4<span class="fs-6"> %</span></h2>
+                            <div class="d-flex align-items-center">
+                                <span class="kpi-trend up me-2"><i class="fas fa-arrow-up me-1"></i>2.1%</span>
+                                <span>较上周</span>
+                            </div>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                            <i class="fas fa-tachometer-alt text-success" style="font-size: 1.8rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="kpi-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-secondary">调度容量</h5>
+                            <h2 class="kpi-value text-info">352<span class="fs-6"> MW</span></h2>
+                            <div class="d-flex align-items-center">
+                                <span class="kpi-trend down me-2"><i class="fas fa-arrow-down me-1"></i>1.8%</span>
+                                <span>较上周</span>
+                            </div>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded-circle">
+                            <i class="fas fa-chart-line text-info" style="font-size: 1.8rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 图表展示区 -->
+        <div class="row mb-4">
+            <!-- 综合功率曲线图 -->
+            <div class="col-lg-8 mb-4">
+                <div class="chart-container">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>综合功率曲线</h4>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-download me-1"></i>导出
+                            </button>
+                        </div>
+                    </div>
+                    <canvas id="powerChart" height="300"></canvas>
+                </div>
+            </div>
+            
+            <!-- 区域贡献热力图 -->
+            <div class="col-lg-4 mb-4">
+                <div class="chart-container">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0"><i class="fas fa-map me-2"></i>区域贡献热力分布</h4>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-expand me-1"></i>放大
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row text-center g-2">
+                        <div class="col-4">
+                            <div class="heatmap-cell" style="background-color: rgba(46, 204, 113, 0.3)">南京</div>
+                            <div class="fw-bold mt-1">128 MW</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="heatmap-cell" style="background-color: rgba(46, 204, 113, 0.7)">苏州</div>
+                            <div class="fw-bold mt-1">206 MW</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="heatmap-cell" style="background-color: rgba(46, 204, 113, 0.4)">无锡</div>
+                            <div class="fw-bold mt-1">98 MW</div>
+                        </div>
+                        <div class="col-4 mt-3">
+                            <div class="heatmap-cell" style="background-color: rgba(46, 204, 113, 0.2)">常州</div>
+                            <div class="fw-bold mt-1">76 MW</div>
+                        </div>
+                        <div class="col-4 mt-3">
+                            <div class="heatmap-cell" style="background-color: rgba(46, 204, 113, 0.6)">南通</div>
+                            <div class="fw-bold mt-1">142 MW</div>
+                        </div>
+                        <div class="col-4 mt-3">
+                            <div class="heatmap-cell" style="background-color: rgba(46, 204, 113, 0.8)">镇江</div>
+                            <div class="fw-bold mt-1">180 MW</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <!-- 储能状态分布 -->
+            <div class="col-lg-4 mb-4">
+                <div class="chart-container">
+                    <h4 class="mb-4"><i class="fas fa-car-battery me-2"></i>储能状态分布</h4>
+                    <canvas id="socChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- 收益构成 -->
+            <div class="col-lg-4 mb-4">
+                <div class="chart-container">
+                    <h4 class="mb-4"><i class="fas fa-money-bill-wave me-2"></i>收益构成分析</h4>
+                    <canvas id="revenueChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- KPI趋势图 -->
+            <div class="col-lg-4 mb-4">
+                <div class="chart-container">
+                    <h4 class="mb-4"><i class="fas fa-chart-bar me-2"></i>响应率趋势</h4>
+                    <canvas id="kpiTrendChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 报表区域 -->
+        <div class="report-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0"><i class="fas fa-list me-2"></i>调度指令响应明细</h4>
+                <button class="btn btn-primary">
+                    <i class="fas fa-download me-1"></i>导出完整报告
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>指令时间</th>
+                            <th>服务类型</th>
+                            <th>调度来源</th>
+                            <th>指令要求 (MW)</th>
+                            <th>实际响应 (MW)</th>
+                            <th>响应率</th>
+                            <th>达标状态</th>
+                            <th>响应时长</th>
+                            <th>收益 (¥)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2023-10-18 08:30</td>
+                            <td>调峰服务</td>
+                            <td>华东总调</td>
+                            <td>85</td>
+                            <td>82.5</td>
+                            <td><span class="badge bg-success">97.1%</span></td>
+                            <td><span class="badge bg-success">达标</span></td>
+                            <td>4.2s</td>
+                            <td class="fw-bold">¥24,860</td>
+                        </tr>
+                        <tr>
+                            <td>2023-10-18 12:15</td>
+                            <td>调频服务</td>
+                            <td>江苏地调</td>
+                            <td>120</td>
+                            <td>117.8</td>
+                            <td><span class="badge bg-warning">96.5%</span></td>
+                            <td><span class="badge bg-warning">临界</span></td>
+                            <td>3.8s</td>
+                            <td class="fw-bold">¥31,290</td>
+                        </tr>
+                        <tr>
+                            <td>2023-10-18 15:40</td>
+                            <td>调峰服务</td>
+                            <td>上海地调</td>
+                            <td>65</td>
+                            <td>66.2</td>
+                            <td><span class="badge bg-success">101.8%</span></td>
+                            <td><span class="badge bg-success">达标</span></td>
+                            <td>5.1s</td>
+                            <td class="fw-bold">¥17,350</td>
+                        </tr>
+                        <tr>
+                            <td>2023-10-19 09:20</td>
+                            <td>调峰服务</td>
+                            <td>浙江地调</td>
+                            <td>95</td>
+                            <td>89.5</td>
+                            <td><span class="badge bg-danger">94.2%</span></td>
+                            <td><span class="badge bg-danger">未达标</span></td>
+                            <td>6.5s</td>
+                            <td class="fw-bold">¥9,860</td>
+                        </tr>
+                        <tr>
+                            <td>2023-10-20 14:00</td>
+                            <td>调频服务</td>
+                            <td>华东总调</td>
+                            <td>110</td>
+                            <td>108.9</td>
+                            <td><span class="badge bg-success">99.0%</span></td>
+                            <td><span class="badge bg-success">达标</span></td>
+                            <td>4.8s</td>
+                            <td class="fw-bold">¥31,580</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 操作区域 -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h4 class="mb-4"><i class="fas fa-cogs me-2"></i>报表管理</h4>
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="action-card card p-4 text-center h-100">
+                            <div class="card-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <h5>新建报告模板</h5>
+                            <p class="text-secondary">创建自定义的服务报告模板</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="action-card card p-4 text-center h-100">
+                            <div class="card-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <h5>历史报告</h5>
+                            <p class="text-secondary">查看历史生成的服务报告记录</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="action-card card p-4 text-center h-100">
+                            <div class="card-icon">
+                                <i class="fas fa-share-alt"></i>
+                            </div>
+                            <h5>报告共享</h5>
+                            <p class="text-secondary">将报告共享给其他部门或机构</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="action-card card p-4 text-center h-100">
+                            <div class="card-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <h5>自动订阅</h5>
+                            <p class="text-secondary">设置自动生成并发送报告</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 设置当前日期
+        const now = new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        document.getElementById('current-date').innerText = now.toLocaleDateString('zh-CN', options);
+        
+        // 功率曲线图
+        const powerCtx = document.getElementById('powerChart').getContext('2d');
+        const powerChart = new Chart(powerCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                datasets: [{
+                    label: '光伏出力预测',
+                    data: [105, 95, 220, 360, 300, 150, 80],
+                    borderColor: '#FFD700',
+                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                    tension: 0.3,
+                    fill: false
+                }, {
+                    label: '光伏实际出力',
+                    data: [100, 90, 210, 350, 280, 145, 85],
+                    borderColor: '#FFA500',
+                    backgroundColor: 'rgba(255, 165, 0, 0.1)',
+                    tension: 0.3,
+                    fill: false
+                }, {
+                    label: '调度指令',
+                    data: [0, 0, 205, 300, 240, 120, 0],
+                    borderColor: '#3498db',
+                    borderDash: [5, 5],
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.3,
+                    fill: false
+                }, {
+                    label: '实际响应',
+                    data: [0, 0, 212, 295, 230, 118, 0],
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    tension: 0.3,
+                    fill: false
+                }, {
+                    label: '储能充放电功率',
+                    data: [40, 35, -30, -50, -80, -15, 25],
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '功率 (MW)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // SOC分布图
+        const socCtx = document.getElementById('socChart').getContext('2d');
+        const socChart = new Chart(socCtx, {
+            type: 'bar',
+            data: {
+                labels: ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'],
+                datasets: [{
+                    label: '储能SOC分布',
+                    data: [8, 18, 35, 25, 14],
+                    backgroundColor: [
+                        'rgba(231, 76, 60, 0.7)',
+                        'rgba(241, 196, 15, 0.7)',
+                        'rgba(46, 204, 113, 0.7)',
+                        'rgba(52, 152, 219, 0.7)',
+                        'rgba(155, 89, 182, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '储能单元数量'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 收益构成图
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(revenueCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['调峰服务', '调频服务', '容量补偿'],
+                datasets: [{
+                    data: [45, 40, 15],
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.8)',
+                        'rgba(46, 204, 113, 0.8)',
+                        'rgba(155, 89, 182, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+        
+        // KPI趋势图
+        const kpiTrendCtx = document.getElementById('kpiTrendChart').getContext('2d');
+        const kpiTrendChart = new Chart(kpiTrendCtx, {
+            type: 'line',
+            data: {
+                labels: ['10/12', '10/13', '10/14', '10/15', '10/16', '10/17', '10/18'],
+                datasets: [{
+                    label: '响应率',
+                    data: [94.2, 95.6, 96.1, 95.2, 97.3, 96.5, 96.4],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }, {
+                    label: '达标率',
+                    data: [92.8, 94.3, 95.2, 93.8, 96.4, 95.7, 95.5],
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 90,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: '百分比 (%)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
