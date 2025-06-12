@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartVPP - Virtual Power Plant Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Exo 2', sans-serif;
+        }
+        
+        body {
+            background-color: #0f1729;
+            color: #e6f1ff;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 3fr 1fr;
+            grid-template-rows: 90px 1fr;
+            height: 100vh;
+            padding: 16px;
+            gap: 16px;
+            background: 
+                linear-gradient(135deg, rgba(9,20,40,0.9) 0%, rgba(4,12,24,0.95) 100%),
+                radial-gradient(circle at top left, rgba(0,102,204,0.15) 0%, transparent 60%);
+        }
+        
+        .header {
+            grid-column: 1 / 4;
+            background: rgba(12, 26, 50, 0.7);
+            border-radius: 12px;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(64, 140, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00f2fe;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        .date-time {
+            font-weight: 500;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 10px;
+        }
+        
+        .panel {
+            background: rgba(12, 26, 50, 0.4);
+            border-radius: 18px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(64, 140, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            border-radius: 18px 18px 0 0;
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #70d6ff;
+        }
+        
+        .badge {
+            background: rgba(0, 150, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* Left Column Styles */
+        .left-column {
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        
+        /* Middle Column Style */
+        .center-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        /* Right Column Styles */
+        .right-column {
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        
+        /* Styling for statistic cards */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .card {
+            background: linear-gradient(145deg, rgba(16, 32, 58, 0.7), rgba(22, 45, 80, 0.5));
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(64, 140, 255, 0.15);
+        }
+        
+        .card-title {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+        
+        .card-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #4dabf7;
+            margin: 5px 0 10px;
+        }
+        
+        .progress-container {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+        }
+        
+        .progress-green {
+            background: #51cf66;
+        }
+        
+        .progress-yellow {
+            background: #fcc419;
+        }
+        
+        .progress-red {
+            background: #ff6b6b;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+        
+        /* Map styling for center panel */
+        .vpp-map {
+            flex-grow: 1;
+            background: linear-gradient(135deg, rgba(7, 17, 35, 0.8), rgba(11, 25, 48, 0.9));
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 194, 255, 0.1);
+        }
+        
+        .map-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.15;
+            background: 
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        .system-nodes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .node-icon {
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-bottom: 5px;
+            font-size: 24px;
+            box-shadow: 0 0 15px currentColor;
+            color: white;
+        }
+        
+        .node-label {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .node-load { color: #ff922b; background: rgba(255, 146, 43, 0.15); }
+        .node-pv { color: #fcc419; background: rgba(252, 196, 25, 0.15); }
+        .node-storage { color: #20c997; background: rgba(32, 201, 151, 0.15); }
+        .node-grid { color: #748ffc; background: rgba(116, 143, 252, 0.15); }
+        
+        .status-panel {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .status-circle {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .circle-container {
+            width: 90px;
+            height: 90px;
+            position: relative;
+            text-align: center;
+        }
+        
+        .circle-bg {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: absolute;
+            background: rgba(64, 140, 255, 0.1);
+        }
+        
+        .circle-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            font-weight: 700;
+            color: #70d6ff;
+        }
+        
+        .circle-label {
+            margin-top: 8px;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        
+        .center-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 16px;
+        }
+        
+        .alert {
+            background: rgba(218, 64, 64, 0.2);
+            border-left: 4px solid #ff6b6b;
+            padding: 10px 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 15px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        .config-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            padding: 15px 0;
+        }
+        
+        .btn {
+            background: rgba(64, 140, 255, 0.15);
+            border: none;
+            color: #4facfe;
+            padding: 8px 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            backdrop-filter: blur(4px);
+        }
+        
+        .btn:hover {
+            background: rgba(64, 140, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .notification-bar {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(26, 45, 77, 0.9);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border-left: 4px solid #20c997;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            animation: slideIn 0.5s ease-out;
+            z-index: 1000;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .notification-close {
+            background: transparent;
+            border: none;
+            color: #a9d6ff;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="logo-text">SmartVPP Control Center</div>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value">96.2%</div>
+                    <div class="stat-label">System Health</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">42.8 MW</div>
+                    <div class="stat-label">Current Output</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">¥28,960</div>
+                    <div class="stat-label">Today's Earnings</div>
+                </div>
+            </div>
+            <div class="date-time">
+                <i class="far fa-clock"></i>
+                <span id="current-time">Loading...</span>
+            </div>
+        </div>
+        
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Access Statistics Panel -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>接入统计概览 <i class="fas fa-plug"></i></span>
+                    <span class="badge">Real-time update</span>
+                </div>
+                <div class="stat-cards">
+                    <div class="card">
+                        <div class="card-title">负荷总容量</div>
+                        <div class="card-value">185.3 MW</div>
+                        <div class="progress-container">
+                            <div class="progress-bar progress-green" style="width: 75%;"></div>
+                        </div>
+                        <div class="card-desc">使用率: 75%</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">光伏总容量</div>
+                        <div class="card-value">120.4 MW</div>
+                        <div class="progress-container">
+                            <div class="progress-bar progress-green" style="width: 68%;"></div>
+                        </div>
+                        <div class="card-desc">使用率: 68%</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">储能容量</div>
+                        <div class="card-value">86.5 MWh</div>
+                        <div class="progress-container">
+                            <div class="progress-bar progress-yellow" style="width: 82%;"></div>
+                        </div>
+                        <div class="card-desc">使用率: 82%</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+                    <div class="mini-stat">
+                        <div class="card-title">当日发电</div>
+                        <div class="card-value">384.6 MWh</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="card-title">当日用电</div>
+                        <div class="card-value">292.3 MWh</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="card-title">总费用</div>
+                        <div class="card-value">¥42,813</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Electricity Analysis Panel -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>用电分析报告 <i class="fas fa-chart-line"></i></span>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="btn" style="padding: 5px 10px; font-size: 13px;">
+                            <i class="fas fa-calendar-day"></i> 当日
+                        </div>
+                        <div class="btn" style="padding: 5px 10px; font-size: 13px;">
+                            <i class="fas fa-calendar-alt"></i> 月份
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="consumptionChart"></canvas>
+                </div>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <div class="mini-stat">
+                        <div class="card-title">峰值时间</div>
+                        <div class="card-value">14:30</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="card-title">平均负载率</div>
+                        <div class="card-value">73.4%</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="card-title">碳排放量</div>
+                        <div class="card-value">42.8T CO2</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Energy Efficiency Panel -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>能耗效率统计 <i class="fas fa-leaf"></i></span>
+                    <span class="badge">高效</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+                <div class="alert">
+                    <i class="fas fa-exclamation-circle"></i> 能耗超标: 建议调整时段负载使用策略
+                </div>
+            </div>
+        </div>
+        
+        <!-- Center Column -->
+        <div class="center-column">
+            <!-- Central VPP Overview -->
+            <div class="panel" style="flex-grow: 1;">
+                <div class="panel-title">
+                    <span>虚拟电厂总览中心 <i class="fas fa-map-marker-alt"></i></span>
+                    <div class="center-header">
+                        <div>
+                            健康分值: <span style="color: #51cf66;">92.8</span> | 
+                            实时净功率: <span style="color: #70d6ff;">58.6 MW</span>
+                        </div>
+                        <div>
+                            下一高峰: <span style="color: #ff922b;">14:30</span> (+1.2小时)
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="vpp-map">
+                    <div class="map-grid"></div>
+                    <div class="system-nodes">
+                        <div class="node" style="top: 20%; left: 30%;">
+                            <div class="node-icon node-pv">
+                                <i class="fas fa-solar-panel"></i>
+                            </div>
+                            <div class="node-label">PV农场#1</div>
+                        </div>
+                        <div class="node" style="top: 55%; left: 15%;">
+                            <div class="node-icon node-pv">
+                                <i class="fas fa-solar-panel"></i>
+                            </div>
+                            <div class="node-label">PV农场#2</div>
+                        </div>
+                        <div class="node" style="top: 45%; left: 70%;">
+                            <div class="node-icon node-storage">
+                                <i class="fas fa-car-battery"></i>
+                            </div>
+                            <div class="node-label">储能基地</div>
+                        </div>
+                        <div class="node" style="top: 25%; left: 45%;">
+                            <div class="node-icon node-load">
+                                <i class="fas fa-industry"></i>
+                            </div>
+                            <div class="node-label">工业区</div>
+                        </div>
+                        <div class="node" style="top: 70%; left: 40%;">
+                            <div class="node-icon node-load">
+                                <i class="fas fa-city"></i>
+                            </div>
+                            <div class="node-label">居民区</div>
+                        </div>
+                        <div class="node" style="top: 80%; left: 75%;">
+                            <div class="node-icon node-grid">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="node-label">电网接入点</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="status-panel">
+                    <div class="status-circle">
+                        <div class="circle-container">
+                            <div class="circle-bg"></div>
+                            <div class="circle-value">86%</div>
+                        </div>
+                        <div class="circle-label">发电效率</div>
+                    </div>
+                    <div class="status-circle">
+                        <div class="circle-container">
+                            <div class="circle-bg"></div>
+                            <div class="circle-value">92%</div>
+                        </div>
+                        <div class="circle-label">负载平衡</div>
+                    </div>
+                    <div class="status-circle">
+                        <div class="circle-container">
+                            <div class="circle-bg"></div>
+                            <div class="circle-value">78%</div>
+                        </div>
+                        <div class="circle-label">能效评级</div>
+                    </div>
+                    <div class="status-circle">
+                        <div class="circle-container">
+                            <div class="circle-bg"></div>
+                            <div class="circle-value">94%</div>
+                        </div>
+                        <div class="circle-label">收益指数</div>
+                    </div>
+                </div>
+                
+                <div class="config-bar">
+                    <div class="btn">
+                        <i class="fas fa-sync-alt"></i> 刷新数据
+                    </div>
+                    <div class="btn">
+                        <i class="fas fa-sliders-h"></i> 自动优化
+                    </div>
+                    <div class="btn" style="background: rgba(79, 172, 254, 0.25);">
+                        <i class="fas fa-download"></i> 导出报告
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column -->
+        <div class="right-column">
+            <!-- Power Generation Dynamics -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>发电动态曲线 <i class="fas fa-chart-area"></i></span>
+                    <span class="badge">模式: 充/放电</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="powerGenChart"></canvas>
+                </div>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <div class="mini-stat">
+                        <div class="card-title">光伏效率</div>
+                        <div class="card-value">92%</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="card-title">天气影响</div>
+                        <div class="card-value">-3.2%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expense Tracking -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>费用明细跟踪 <i class="fas fa-money-bill-wave"></i></span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="costChart"></canvas>
+                </div>
+                <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="card">
+                        <div class="card-title">峰谷电价费用</div>
+                        <div class="card-value">¥14,230</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">次日预测</div>
+                        <div class="card-value">¥29,580</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Revenue Analysis -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span>上网收益分析 <i class="fas fa-chart-bar"></i></span>
+                    <div>
+                        <span class="badge">+8.5% 周增长</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                    <div style="font-size: 14px;">自用率: 64.8%</div>
+                    <div style="font-size: 14px;">上网率: 35.2%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification -->
+        <div class="notification-bar">
+            <i class="fas fa-info-circle" style="font-size: 20px; color: #20c997;"></i>
+            <div class="notification-content">
+                <strong>系统提示:</strong> 光伏输出达到阈值，正在自动分配储能容量。
+                <div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">2023-06-15 10:45:23</div>
+            </div>
+            <button class="notification-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const date = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+            const time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('current-time').textContent = `${date} ${time}`;
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime();
+        
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Consumption Chart
+            const consumptionCtx = document.getElementById('consumptionChart').getContext('2d');
+            new Chart(consumptionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    datasets: [{
+                        label: '当日用电量 (MWh)',
+                        data: [285, 238, 292, 315, 280, 210, 175],
+                        backgroundColor: 'rgba(79, 172, 254, 0.5)',
+                        borderColor: 'rgba(79, 172, 254, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255,255,255,0.05)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(230,241,255,0.7)',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Efficiency Chart
+            const efficiencyCtx = document.getElementById('efficiencyChart').getContext('2d');
+            new Chart(efficiencyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: '能效指数',
+                        data: [82, 78, 85, 79, 76, 83],
+                        borderColor: '#20c997',
+                        backgroundColor: 'rgba(32, 201, 151, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 70,
+                            max: 90,
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255,255,255,0.05)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(230,241,255,0.7)',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Power Generation Chart
+            const powerGenCtx = document.getElementById('powerGenChart').getContext('2d');
+            new Chart(powerGenCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                    datasets: [
+                        {
+                            label: '负荷功率 (MW)',
+                            data: [98, 89, 75, 102, 148, 182, 164, 142],
+                            borderColor: '#ff922b',
+                            borderWidth: 2,
+                            tension: 0.3
+                        },
+                        {
+                            label: '发电功率 (MW)',
+                            data: [0, 0, 28, 72, 118, 156, 103, 56],
+                            borderColor: '#fcc419',
+                            borderWidth: 2,
+                            tension: 0.3
+                        },
+                        {
+                            label: '储能功率 (MW)',
+                            data: [32, 48, 22, -15, -28, -42, 18, 25],
+                            borderColor: '#20c997',
+                            borderWidth: 2,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255,255,255,0.05)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(230,241,255,0.7)',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Cost Chart
+            const costCtx = document.getElementById('costChart').getContext('2d');
+            new Chart(costCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['维护费', '储能损耗', '电网接入', '交易费', '其他'],
+                    datasets: [{
+                        label: '费用明细 (¥千)',
+                        data: [5.2, 3.8, 7.5, 1.2, 2.4],
+                        backgroundColor: [
+                            'rgba(79, 172, 254, 0.7)',
+                            'rgba(32, 201, 151, 0.7)',
+                            'rgba(255, 146, 43, 0.7)',
+                            'rgba(116, 143, 252, 0.7)',
+                            'rgba(172, 172, 188, 0.7)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255,255,255,0.05)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(230,241,255,0.7)',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    datasets: [
+                        {
+                            label: '自用收益 (¥)',
+                            data: [12300, 11800, 14200, 13800, 15200, 10900, 9800],
+                            backgroundColor: 'rgba(79, 172, 254, 0.7)'
+                        },
+                        {
+                            label: '上网收益 (¥)',
+                            data: [6800, 7200, 8600, 9200, 10300, 7600, 6400],
+                            backgroundColor: 'rgba(32, 201, 151, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255,255,255,0.05)'
+                            },
+                            ticks: {
+                                color: 'rgba(230,241,255,0.7)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(230,241,255,0.7)',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Close notification
+        document.querySelector('.notification-close').addEventListener('click', function() {
+            this.closest('.notification-bar').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
