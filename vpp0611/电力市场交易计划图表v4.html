@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟电厂仿真控制台</title>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body {
+            background-color: white;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .chart-container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <canvas id="energyChart"></canvas>
+    </div>
+
+    <script>
+        // 加载并解析CSV数据
+        fetch('https://littleboyblue.github.io/vpp0611/vpp_simulation.csv')
+            .then(response => response.text())
+            .then(csvData => {
+                const results = Papa.parse(csvData, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true
+                });
+                
+                const data = results.data;
+                const labels = data.map(row => row['时间']);
+                const price = data.map(row => row['预测电价 (元/kWh)'] * 1000); // 转换为元/MWh
+                const pv = data.map(row => row['光伏发电量 (kW)'] / 1000); // 转换为MW
+                const load = data.map(row => row['总负荷 (kW)'] / 1000); // 转换为MW
+                const chargeDischarge = data.map(row => row['计划充放电量 (kW)'] / 1000); // 转换为MW
+                const netTrade = data.map(row => row['计划净交易功率 (kW)'] / 1000); // 转换为MW
+
+                // 为净交易和充放电创建颜色数组
+                const netTradeColors = netTrade.map(value => 
+                    value > 0 ? 'rgba(50, 168, 82, 0.7)' : 'rgba(231, 76, 60, 0.7)'
+                );
+
+                const chargeDischargeColors = chargeDischarge.map(value => 
+                    value > 0 ? 'rgba(52, 152, 219, 1)' : 'rgba(46, 204, 113, 1)'
+                );
+
+                // 将时间标签转换为时刻对象
+                const timestamps = labels.map(label => {
+                    const [hours, minutes] = label.split(':');
+                    return moment().set({hours, minutes}).toDate();
+                });
+
+                // 创建图表
+                const ctx = document.getElementById('energyChart').getContext('2d');
+                const energyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [
+                            {
+                                label: '预测电价',
+                                data: price,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                                yAxisID: 'y-axis-price',
+                                fill: false,
+                                tension: 0.4,
+                                pointRadius: 0,
+                            },
+                            {
+                                label: '光伏发电量',
+                                data: pv,
+                                borderColor: 'rgba(255, 206, 86, 1)',
+                                backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                                yAxisID: 'y-axis-power',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0,
+                            },
+                            {
+                                label: '总负荷',
+                                data: load,
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                                yAxisID: 'y-axis-power',
+                                fill: false,
+                                tension: 0.4,
+                                pointRadius: 0,
+                            },
+                            {
+                                label: '计划充放电',
+                                data: chargeDischarge,
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: chargeDischargeColors,
+                                yAxisID: 'y-axis-bess',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                type: 'bar',
+                                barPercentage: 0.5,
+                                categoryPercentage: 1.0
+                            },
+                            {
+                                label: '计划净交易',
+                                data: netTrade,
+                                backgroundColor: netTradeColors,
+                                yAxisID: 'y-axis-net',
+                                borderWidth: 0,
+                                pointRadius: 0,
+                                type: 'bar',
+                                barPercentage: 0.5,
+                                categoryPercentage: 1.0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'hour',
+                                    displayFormats: {
+                                        hour: 'HH:mm'
+                                    }
+                                },
+                                ticks: {
+                                    source: 'labels',
+                                    maxTicksLimit: 24,
+                                    color: 'black'
+                                },
+                                grid: {
+                                    display: true,
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                title: {
+                                    display: true,
+                                    text: '时间 (24小时)',
+                                    color: 'black',
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            },
+                            'y-axis-price': {
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: '电价 (元/MWh)',
+                                    color: 'black',
+                                    font: {
+                                        size: 14
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'black'
+                                }
+                            },
+                            'y-axis-power': {
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: '功率 (MW)',
+                                    color: 'black',
+                                    font: {
+                                        size: 14
+                                    }
+                                },
+                                grid: {
+                                    display: false,
+                                },
+                                ticks: {
+                                    color: 'black'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'black'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                padding: 15,
+                                bodyColor: 'black',
+                                titleColor: 'black',
+                                callbacks: {
+                                    title: (items) => {
+                                        return `时间: ${items[0].label}`;
+                                    },
+                                    label: (context) => {
+                                        const label = context.dataset.label || '';
+                                        if (label === '预测电价') {
+                                            return `${label}: ${context.parsed.y} 元/MWh`;
+                                        }
+                                        return `${label}: ${context.parsed.y} MW`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('加载CSV数据失败:', error);
+                alert('加载数据失败，请检查控制台查看详情');
+            });
+    </script>
+</body>
+</html>
