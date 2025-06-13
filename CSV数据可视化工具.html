@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV数据可视化工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4ecfb 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .upload-section {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .chart-section {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-title {
+            color: #3498db;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            font-size: 1.5rem;
+        }
+        
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 25px;
+        }
+        
+        .drop-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafd;
+        }
+        
+        .drop-area:hover {
+            background: #e3f2fd;
+            border-color: #2980b9;
+        }
+        
+        .drop-area.active {
+            background: #dbeafe;
+            border-color: #2563eb;
+        }
+        
+        .drop-area i {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .drop-area p {
+            margin: 10px 0;
+            color: #555;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .column-config {
+            margin-top: 25px;
+        }
+        
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .config-table th {
+            text-align: left;
+            color: #2c3e50;
+            padding: 12px 15px;
+            background: #f1f9ff;
+        }
+        
+        .config-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .config-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .config-table tr:hover {
+            background: #f8faff;
+        }
+        
+        .select-style {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            width: 100%;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+        
+        .select-style:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .chart-container {
+            height: 500px;
+            position: relative;
+            width: 100%;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .btn-success {
+            background: #2ecc71;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        /* 加载动画 */
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CSV数据可视化工具</h1>
+            <p class="subtitle">上传CSV文件，自定义图表类型，生成多轴可视化图表</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <h2 class="section-title">数据源配置</h2>
+                
+                <div class="file-upload">
+                    <div id="drop-area" class="drop-area">
+                        <i>📁</i>
+                        <h3>拖放CSV文件到此处</h3>
+                        <p>或</p>
+                        <label for="file-input" class="btn">
+                            <i>📂</i> 选择CSV文件
+                        </label>
+                        <input type="file" id="file-input" accept=".csv">
+                    </div>
+                    
+                    <div class="instructions">
+                        <p><strong>要求:</strong> CSV文件第一列必须是时间戳或日期列，其余列应为数值数据</p>
+                        <p>示例格式:</p>
+                        <pre>Time,Sales,Temperature,Visitors
+2023-01-01,452,22.5,120
+2023-01-02,621,23.1,156</pre>
+                    </div>
+                </div>
+                
+                <div class="column-config" id="column-config" style="display:none;">
+                    <h3>列配置</h3>
+                    <p>为每个数据列指定图表类型</p>
+                    <div id="config-table-container">
+                        <table class="config-table">
+                            <thead>
+                                <tr>
+                                    <th>列名称</th>
+                                    <th>图表类型</th>
+                                </tr>
+                            </thead>
+                            <tbody id="config-table-body">
+                                <!-- 动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="render-btn">生成图表</button>
+                        <button class="btn btn-secondary" id="reset-btn">重新上传</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-section">
+                <h2 class="section-title">图表展示</h2>
+                <div class="chart-container">
+                    <canvas id="data-chart"></canvas>
+                </div>
+                <div id="spinner" class="spinner"></div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>CSV数据可视化工具 &copy; 2023 | 基于Chart.js和Papaparse</p>
+        </footer>
+    </div>
+
+    <script>
+        // 全局变量
+        let chartInstance = null;
+        let csvData = null;
+        let headers = [];
+        
+        // DOM元素
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const columnConfig = document.getElementById('column-config');
+        const configTableBody = document.getElementById('config-table-body');
+        const renderBtn = document.getElementById('render-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const spinner = document.getElementById('spinner');
+        
+        // 拖动效果增强
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.classList.add('active');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('active');
+        }
+        
+        // 处理文件拖放
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+        
+        // 处理文件选择
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+        
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            if (!file.type.match('text/csv') && !file.name.toLowerCase().endsWith('.csv')) {
+                alert('请上传CSV格式的文件');
+                return;
+            }
+            
+            // 显示加载状态
+            spinner.style.display = 'block';
+            
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    spinner.style.display = 'none';
+                    csvData = results.data;
+                    
+                    if (csvData.length === 0) {
+                        alert('没有找到数据或CSV格式不正确');
+                        return;
+                    }
+                    
+                    // 获取表头
+                    headers = results.meta.fields || Object.keys(csvData[0]);
+                    
+                    // 显示配置界面
+                    showColumnConfig(headers);
+                },
+                error: function(error) {
+                    spinner.style.display = 'none';
+                    alert('解析CSV文件出错: ' + error.message);
+                }
+            });
+        }
+        
+        function showColumnConfig(columns) {
+            // 清空之前的配置表格
+            configTableBody.innerHTML = '';
+            
+            // 从第二列开始（第一列是时间）
+            for (let i = 1; i < columns.length; i++) {
+                const row = document.createElement('tr');
+                
+                // 列名
+                const nameCell = document.createElement('td');
+                nameCell.textContent = columns[i];
+                row.appendChild(nameCell);
+                
+                // 图表类型选择
+                const typeCell = document.createElement('td');
+                const select = document.createElement('select');
+                select.className = 'select-style';
+                select.dataset.column = columns[i];
+                
+                const optionBar = document.createElement('option');
+                optionBar.value = 'bar';
+                optionBar.textContent = '柱状图';
+                
+                const optionLine = document.createElement('option');
+                optionLine.value = 'line';
+                optionLine.textContent = '折线图';
+                
+                select.appendChild(optionBar);
+                select.appendChild(optionLine);
+                typeCell.appendChild(select);
+                row.appendChild(typeCell);
+                
+                configTableBody.appendChild(row);
+            }
+            
+            columnConfig.style.display = 'block';
+        }
+        
+        // 渲染图表
+        renderBtn.addEventListener('click', renderChart);
+        
+        function renderChart() {
+            if (!csvData || csvData.length === 0) {
+                alert('请先上传有效的CSV文件');
+                return;
+            }
+            
+            spinner.style.display = 'block';
+            
+            // 获取时间列
+            const timeColumn = headers[0];
+            const labels = csvData.map(row => row[timeColumn]);
+            
+            // 获取配置
+            const configs = [];
+            const selects = document.querySelectorAll('#config-table-body select');
+            
+            selects.forEach(select => {
+                configs.push({
+                    column: select.dataset.column,
+                    type: select.value
+                });
+            });
+            
+            // 设置图表数据
+            const datasets = [];
+            let yAxisCounter = 0;
+            
+            configs.forEach(config => {
+                const data = csvData.map(row => row[config.column]);
+                
+                // 为每个数据集分配y轴ID
+                const yAxisID = `y-axis-${yAxisCounter}`;
+                yAxisCounter++;
+                
+                datasets.push({
+                    label: config.column,
+                    data: data,
+                    borderColor: randomColor(),
+                    backgroundColor: config.type === 'bar' ? randomColor(0.5) : 'transparent',
+                    yAxisID: yAxisID,
+                    type: config.type,
+                    borderWidth: config.type === 'bar' ? 0 : 2,
+                    tension: config.type === 'line' ? 0.3 : undefined,
+                    fill: false
+                });
+            });
+            
+            // 销毁之前的图表
+            const ctx = document.getElementById('data-chart').getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            // 创建y轴配置
+            const scales = {
+                x: {
+                    title: {
+                        display: true,
+                        text: timeColumn
+                    }
+                }
+            };
+            
+            // 为每个数据集创建y轴配置
+            for (let i = 0; i < datasets.length; i++) {
+                const yAxisID = `y-axis-${i}`;
+                scales[yAxisID] = {
+                    type: 'linear',
+                    display: true,
+                    position: i % 2 === 0 ? 'left' : 'right',
+                    title: {
+                        display: true,
+                        text: datasets[i].label
+                    },
+                    grid: {
+                        drawOnChartArea: i === 0, // 只在第一个轴上显示网格
+                    },
+                    beginAtZero: false
+                };
+            }
+            
+            // 创建新图表
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: scales,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleFont: {
+                                size: 16
+                            },
+                            bodyFont: {
+                                size: 14
+                            },
+                            padding: 12,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            });
+            
+            spinner.style.display = 'none';
+        }
+        
+        // 重置按钮
+        resetBtn.addEventListener('click', function() {
+            fileInput.value = '';
+            columnConfig.style.display = 'none';
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+            const ctx = document.getElementById('data-chart').getContext('2d');
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            document.querySelector('.drop-area i').innerText = '📁';
+            document.querySelector('.drop-area h3').innerText = '拖放CSV文件到此处';
+            document.querySelector('.drop-area p').style.display = 'block';
+        });
+        
+        // 生成随机颜色
+        function randomColor(opacity = 1) {
+            const r = Math.floor(Math.random() * 255);
+            const g = Math.floor(Math.random() * 255);
+            const b = Math.floor(Math.random() * 255);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+        
+        // 示例CSV文件
+        const exampleData = 
+`Time,Sales,Temperature,Visitors
+2023-01-01,452,22.5,120
+2023-01-02,621,23.1,156
+2023-01-03,714,24.3,182
+2023-01-04,892,21.7,145
+2023-01-05,531,19.8,167
+2023-01-06,723,22.0,162
+2023-01-07,854,23.5,178
+2023-01-08,680,24.0,155
+2023-01-09,721,22.8,148
+2023-01-10,903,21.5,186`;
+        
+        // 加载示例数据
+        window.addEventListener('DOMContentLoaded', function() {
+            // 模拟文件上传和解析过程
+            spinner.style.display = 'block';
+            
+            setTimeout(() => {
+                const results = Papa.parse(exampleData, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true
+                });
+                
+                csvData = results.data;
+                headers = results.meta.fields || Object.keys(csvData[0]);
+                showColumnConfig(headers);
+                
+                document.querySelector('.drop-area i').innerText = '📊';
+                document.querySelector('.drop-area h3').innerText = '已加载示例数据';
+                document.querySelector('.drop-area p').style.display = 'none';
+                
+                spinner.style.display = 'none';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
