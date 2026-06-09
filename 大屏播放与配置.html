@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大屏编排 v1</title>
+    <style>
+        :root {
+            --color-primary: #27aee4;
+            --color-primary-hover: #168fc3;
+            --color-primary-active: #0c749f;
+            --color-text: #203040;
+            --color-text-secondary: #64748b;
+            --color-text-inverse: #ffffff;
+            --color-bg: #eef8fd;
+            --color-bg-secondary: #ffffff;
+            --color-bg-tertiary: #f6fbff;
+            --color-border: #cde8f6;
+            --color-border-focus: #27aee4;
+            --color-error: #d64545;
+            --color-error-bg: #fff1f1;
+            --color-success: #0f9f74;
+            --color-success-bg: #e9fff7;
+            --color-warning: #b7791f;
+            --color-warning-bg: #fff8e6;
+            --color-info: #087eb8;
+            --color-info-bg: #e8f7ff;
+            --color-overlay: rgba(13, 40, 64, 0.78);
+            --text-xs: 12px;
+            --text-sm: 14px;
+            --text-base: 16px;
+            --text-lg: 18px;
+            --text-xl: 20px;
+            --text-2xl: 24px;
+            --text-3xl: 32px;
+            --text-4xl: 44px;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 12px;
+            --spacing-lg: 16px;
+            --spacing-xl: 24px;
+            --spacing-2xl: 32px;
+            --spacing-3xl: 48px;
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
+            --radius-full: 999px;
+            --shadow-sm: 0 1px 2px rgba(32, 48, 64, 0.08);
+            --shadow-md: 0 8px 20px rgba(32, 48, 64, 0.10);
+            --shadow-lg: 0 14px 34px rgba(32, 48, 64, 0.14);
+            --shadow-xl: 0 22px 48px rgba(32, 48, 64, 0.18);
+            --transition-fast: 120ms ease;
+            --transition-base: 180ms ease;
+            --transition-slow: 280ms ease;
+            --z-navbar: 100;
+            --z-dropdown: 200;
+            --z-sticky: 300;
+            --z-overlay: 900;
+            --z-modal: 1000;
+            --z-toast: 1100;
+            --navbar-height: 64px;
+            --navbar-bg: #ffffff;
+            --navbar-border: #cde8f6;
+            --navbar-shadow: 0 8px 20px rgba(32, 48, 64, 0.08);
+            --screen-blue: #006BBA;
+            --screen-blue-mid: #068ad5;
+            --screen-blue-deep: #003f86;
+            --screen-cyan: #7ce8ff;
+            --screen-card: rgba(255, 255, 255, 0.14);
+            --screen-card-strong: rgba(255, 255, 255, 0.24);
+            --screen-line: rgba(255, 255, 255, 0.34);
+            --title-x: 0px;
+            --title-y: 0px;
+            --title-size: 34px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-width: 1200px;
+            font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", Arial, sans-serif;
+            line-height: 1.5;
+            color: var(--color-text);
+            background: var(--color-bg);
+        }
+
+        .skip-link {
+            position: fixed;
+            left: var(--spacing-lg);
+            top: var(--spacing-lg);
+            z-index: var(--z-toast);
+            transform: translateY(-160%);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            color: var(--color-text-inverse);
+            background: var(--color-primary-active);
+            transition: transform var(--transition-base);
+        }
+
+        .skip-link:focus {
+            transform: translateY(0);
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            cursor: pointer;
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: var(--navbar-height) 1fr;
+        }
+
+        /* SHARED_HEADER_START */
+        .title-bar {
+            position: sticky;
+            top: 0;
+            z-index: var(--z-navbar);
+            height: var(--navbar-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+            color: var(--color-text-inverse);
+            background: linear-gradient(90deg, var(--color-primary), var(--screen-blue-mid));
+            box-shadow: var(--navbar-shadow);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border-radius: var(--radius-md);
+            color: var(--color-primary);
+            background: var(--color-text-inverse);
+            font-weight: 800;
+        }
+
+        .brand-title {
+            font-size: var(--text-xl);
+            font-weight: 700;
+        }
+
+        .title-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            font-size: var(--text-sm);
+        }
+        /* SHARED_HEADER_END */
+
+        .page-body {
+            display: grid;
+            grid-template-columns: 260px minmax(620px, 1fr) 320px;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg);
+        }
+
+        .panel {
+            min-height: 0;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            background: var(--color-bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .panel-header {
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+            color: var(--color-info);
+            background: var(--color-info-bg);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            font-weight: 700;
+        }
+
+        .panel-body {
+            padding: var(--spacing-lg);
+        }
+
+        .mode-switch {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-xs);
+            border-radius: var(--radius-md);
+            background: var(--color-bg-tertiary);
+        }
+
+        .mode-button {
+            height: 36px;
+            border-radius: var(--radius-sm);
+            color: var(--color-text-secondary);
+            background: transparent;
+            transition: background var(--transition-base), color var(--transition-base), box-shadow var(--transition-base);
+        }
+
+        .mode-button.is-active,
+        .mode-button:hover {
+            color: var(--color-info);
+            background: var(--color-bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .page-list {
+            display: grid;
+            gap: var(--spacing-md);
+        }
+
+        .page-card {
+            width: 100%;
+            text-align: left;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            background: var(--color-bg-tertiary);
+            color: var(--color-text);
+            transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+        }
+
+        .page-card:hover,
+        .page-card.is-active {
+            border-color: var(--color-border-focus);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .page-name {
+            display: block;
+            font-size: var(--text-sm);
+            font-weight: 700;
+        }
+
+        .page-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: var(--spacing-sm);
+            color: var(--color-text-secondary);
+            font-size: var(--text-xs);
+        }
+
+        .schedule-box {
+            margin-top: var(--spacing-lg);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            color: var(--color-info);
+            background: var(--color-info-bg);
+            font-size: var(--text-sm);
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: var(--spacing-lg);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            background: var(--color-bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 var(--spacing-md);
+            border-radius: var(--radius-full);
+            color: var(--color-info);
+            background: var(--color-info-bg);
+            font-size: var(--text-xs);
+            font-weight: 700;
+        }
+
+        .btn {
+            min-height: 36px;
+            padding: 0 var(--spacing-lg);
+            border-radius: var(--radius-md);
+            color: var(--color-text-inverse);
+            background: var(--color-primary);
+            transition: background var(--transition-base), transform var(--transition-fast), box-shadow var(--transition-base);
+        }
+
+        .btn:hover {
+            background: var(--color-primary-hover);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:active {
+            background: var(--color-primary-active);
+            transform: translateY(1px);
+        }
+
+        .btn.secondary {
+            color: var(--color-info);
+            background: var(--color-info-bg);
+        }
+
+        .btn.secondary:hover {
+            background: var(--color-border);
+        }
+
+        .canvas-wrap {
+            display: grid;
+            place-items: center;
+            min-height: 560px;
+            padding: var(--spacing-xl);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            background: var(--color-bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .screen-board {
+            position: relative;
+            width: min(100%, 980px);
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border-radius: var(--radius-md);
+            color: var(--color-text-inverse);
+            background: radial-gradient(circle at top right, var(--screen-blue-mid), transparent 32%), linear-gradient(135deg, var(--screen-blue), var(--screen-blue-deep));
+            box-shadow: var(--shadow-xl);
+        }
+
+        .screen-board::before,
+        .screen-board::after {
+            position: absolute;
+            content: "";
+            pointer-events: none;
+        }
+
+        .screen-board::before {
+            inset: 24px;
+            border: 1px solid var(--screen-line);
+        }
+
+        .screen-board::after {
+            left: 5%;
+            right: 5%;
+            top: 78px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--screen-cyan), transparent);
+        }
+
+        .screen-header {
+            position: absolute;
+            left: 6%;
+            right: 6%;
+            top: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: var(--text-sm);
+            letter-spacing: 0;
+        }
+
+        .screen-title {
+            position: absolute;
+            left: 8%;
+            top: 96px;
+            max-width: 78%;
+            transform: translate(var(--title-x), var(--title-y));
+        }
+
+        .screen-title h1 {
+            margin: 0;
+            font-size: var(--title-size);
+            line-height: 1.2;
+            letter-spacing: 0;
+        }
+
+        .screen-title p {
+            margin: var(--spacing-md) 0 0;
+            color: var(--screen-cyan);
+            font-size: var(--text-lg);
+        }
+
+        .metric-grid {
+            position: absolute;
+            left: 6%;
+            right: 6%;
+            bottom: 28px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-md);
+        }
+
+        .metric-card {
+            min-height: 96px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--screen-line);
+            border-radius: var(--radius-sm);
+            background: var(--screen-card);
+            backdrop-filter: blur(8px);
+        }
+
+        .metric-label {
+            color: var(--screen-cyan);
+            font-size: var(--text-xs);
+        }
+
+        .metric-value {
+            margin-top: var(--spacing-sm);
+            font-size: var(--text-2xl);
+            font-weight: 800;
+        }
+
+        .chart-area {
+            position: absolute;
+            left: 46%;
+            right: 7%;
+            top: 126px;
+            height: 220px;
+            display: grid;
+            align-items: end;
+            grid-template-columns: repeat(6, 1fr);
+            gap: var(--spacing-md);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--screen-line);
+            border-radius: var(--radius-sm);
+            background: var(--screen-card);
+        }
+
+        .bar {
+            min-height: 18px;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            background: linear-gradient(180deg, var(--screen-cyan), var(--screen-card-strong));
+        }
+
+        .bar:nth-child(1) { height: 42%; }
+        .bar:nth-child(2) { height: 64%; }
+        .bar:nth-child(3) { height: 52%; }
+        .bar:nth-child(4) { height: 80%; }
+        .bar:nth-child(5) { height: 68%; }
+        .bar:nth-child(6) { height: 88%; }
+
+        .form-grid {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .field {
+            display: grid;
+            gap: var(--spacing-sm);
+        }
+
+        .field label {
+            color: var(--color-text-secondary);
+            font-size: var(--text-sm);
+            font-weight: 700;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            min-height: 38px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 0 var(--spacing-md);
+            color: var(--color-text);
+            background: var(--color-bg-secondary);
+            outline: none;
+            transition: border-color var(--transition-base), box-shadow var(--transition-base);
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 0 3px var(--color-info-bg);
+        }
+
+        .range-row {
+            display: grid;
+            grid-template-columns: 1fr 48px;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .status-list {
+            display: grid;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            background: var(--color-bg-tertiary);
+            font-size: var(--text-sm);
+        }
+
+        .status-ok {
+            color: var(--color-success);
+            font-weight: 700;
+        }
+
+        .toast {
+            position: fixed;
+            right: var(--spacing-xl);
+            top: calc(var(--navbar-height) + var(--spacing-lg));
+            z-index: var(--z-toast);
+            transform: translateY(-12px);
+            opacity: 0;
+            pointer-events: none;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-md);
+            color: var(--color-success);
+            background: var(--color-success-bg);
+            box-shadow: var(--shadow-lg);
+            transition: opacity var(--transition-base), transform var(--transition-base);
+        }
+
+        .toast.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .player-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: var(--z-modal);
+            display: none;
+            grid-template-rows: 1fr auto;
+            padding: var(--spacing-xl);
+            background: var(--color-overlay);
+        }
+
+        .player-overlay.is-visible {
+            display: grid;
+        }
+
+        .player-overlay .screen-board {
+            width: min(96vw, 1680px);
+            align-self: center;
+            justify-self: center;
+        }
+
+        .player-controls {
+            justify-self: center;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            background: var(--color-bg-secondary);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .progress-track {
+            width: 220px;
+            height: 8px;
+            overflow: hidden;
+            border-radius: var(--radius-full);
+            background: var(--color-border);
+        }
+
+        .progress-fill {
+            width: 0;
+            height: 100%;
+            background: var(--color-primary);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+        }
+
+        @media (max-width: 1280px) {
+            body {
+                min-width: 1024px;
+            }
+
+            .page-body {
+                grid-template-columns: 230px minmax(560px, 1fr) 290px;
+                gap: var(--spacing-md);
+                padding: var(--spacing-md);
+            }
+
+            .canvas-wrap {
+                min-height: 500px;
+                padding: var(--spacing-lg);
+            }
+
+            .screen-title h1 {
+                font-size: calc(var(--title-size) - 4px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">跳到主内容</a>
+    <div class="app-shell">
+        <header class="title-bar">
+            <div class="brand" aria-label="产品标识">
+                <div class="brand-mark">DS</div>
+                <div>
+                    <div class="brand-title">大屏编排 v1</div>
+                    <div>页面绘制、定时更新、全屏轮播</div>
+                </div>
+            </div>
+            <div class="title-actions">
+                <span>今日 06:00 已完成更新</span>
+                <button class="btn secondary" type="button" id="savePlanBtn">保存方案</button>
+                <button class="btn" type="button" id="playBtn">开始全屏播放</button>
+            </div>
+        </header>
+
+        <main class="page-body" id="main-content">
+            <aside class="panel" aria-label="页面与计划">
+                <div class="panel-header">页面清单</div>
+                <div class="panel-body">
+                    <div class="mode-switch" role="tablist" aria-label="模式切换">
+                        <button class="mode-button is-active" type="button" data-mode="edit">编排模式</button>
+                        <button class="mode-button" type="button" data-mode="schedule">更新计划</button>
+                    </div>
+                    <div class="page-list" id="pageList"></div>
+                    <div class="schedule-box">
+                        <strong>定时更新</strong>
+                        <div>每天 06:00 自动刷新系统数据，并应用到已发布大屏页面。</div>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="workspace" aria-label="大屏画布">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <span class="pill" id="currentMode">编排模式</span>
+                        <strong id="currentPageName">欢迎页</strong>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="btn secondary" type="button" id="previewBtn">预览当前页</button>
+                        <button class="btn" type="button" id="publishBtn">发布到大屏</button>
+                    </div>
+                </div>
+
+                <div class="canvas-wrap">
+                    <article class="screen-board" id="screenBoard" aria-label="16比9大屏预览">
+                        <div class="screen-header">
+                            <span>企业经营与考核管理看板</span>
+                            <span id="screenTime">2026-06-05 06:00</span>
+                        </div>
+                        <div class="screen-title">
+                            <h1 id="screenTitle">欢迎各位领导莅临指导</h1>
+                            <p id="screenSubtitle">数据每日 06:00 自动更新</p>
+                        </div>
+                        <div class="chart-area" aria-label="趋势柱状图">
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                        </div>
+                        <div class="metric-grid" aria-label="核心指标">
+                            <div class="metric-card">
+                                <div class="metric-label">综合得分</div>
+                                <div class="metric-value" id="metricOne">96.8</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">完成率</div>
+                                <div class="metric-value" id="metricTwo">98%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">排名</div>
+                                <div class="metric-value" id="metricThree">第 2</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">待整改</div>
+                                <div class="metric-value" id="metricFour">3 项</div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="toolbar" aria-label="播放摘要">
+                    <span>播放总页数：<strong id="totalPages">4</strong></span>
+                    <span>总时长：<strong id="totalDuration">25 秒</strong></span>
+                    <span>当前页停留：<strong id="currentDuration">3 秒</strong></span>
+                </div>
+            </section>
+
+            <aside class="panel" aria-label="属性配置">
+                <div class="panel-header">属性配置</div>
+                <div class="panel-body">
+                    <form class="form-grid" id="editorForm">
+                        <div class="field">
+                            <label for="titleInput">主标题</label>
+                            <input id="titleInput" name="title" type="text" autocomplete="off">
+                        </div>
+                        <div class="field">
+                            <label for="subtitleInput">副标题</label>
+                            <input id="subtitleInput" name="subtitle" type="text" autocomplete="off">
+                        </div>
+                        <div class="field">
+                            <label for="durationInput">本页展示时长（秒）</label>
+                            <input id="durationInput" name="duration" type="number" min="1" max="60">
+                        </div>
+                        <div class="field">
+                            <label for="fontSizeInput">标题字号</label>
+                            <div class="range-row">
+                                <input id="fontSizeInput" name="fontSize" type="range" min="24" max="56">
+                                <span id="fontSizeValue">34</span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="xInput">横向位置</label>
+                            <div class="range-row">
+                                <input id="xInput" name="x" type="range" min="-80" max="160">
+                                <span id="xValue">0</span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="yInput">纵向位置</label>
+                            <div class="range-row">
+                                <input id="yInput" name="y" type="range" min="-40" max="180">
+                                <span id="yValue">0</span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="templateInput">页面类型</label>
+                            <select id="templateInput" name="template">
+                                <option value="welcome">欢迎页</option>
+                                <option value="report">报表页</option>
+                                <option value="rank">考核页</option>
+                            </select>
+                        </div>
+                    </form>
+
+                    <div class="status-list" id="schedulePanel">
+                        <div class="status-item">
+                            <span>数据更新</span>
+                            <span class="status-ok">06:00 自动</span>
+                        </div>
+                        <div class="status-item">
+                            <span>页面发布</span>
+                            <span class="status-ok">可播放</span>
+                        </div>
+                        <div class="status-item">
+                            <span>内容来源</span>
+                            <span class="status-ok">系统数据</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div class="player-overlay" id="playerOverlay" aria-hidden="true">
+        <article class="screen-board" id="playerBoard" aria-label="全屏播放预览">
+            <div class="screen-header">
+                <span>企业经营与考核管理看板</span>
+                <span id="playerTime">2026-06-05 06:00</span>
+            </div>
+            <div class="screen-title">
+                <h1 id="playerTitle">欢迎各位领导莅临指导</h1>
+                <p id="playerSubtitle">数据每日 06:00 自动更新</p>
+            </div>
+            <div class="chart-area" aria-hidden="true">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="metric-grid" aria-hidden="true">
+                <div class="metric-card">
+                    <div class="metric-label">综合得分</div>
+                    <div class="metric-value" id="playerMetricOne">96.8</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">完成率</div>
+                    <div class="metric-value" id="playerMetricTwo">98%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">排名</div>
+                    <div class="metric-value" id="playerMetricThree">第 2</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">待整改</div>
+                    <div class="metric-value" id="playerMetricFour">3 项</div>
+                </div>
+            </div>
+        </article>
+        <div class="player-controls" aria-label="播放控制">
+            <button class="btn secondary" type="button" id="prevBtn">上一页</button>
+            <button class="btn secondary" type="button" id="pauseBtn">暂停</button>
+            <div class="progress-track" aria-label="播放进度"><div class="progress-fill" id="progressFill"></div></div>
+            <button class="btn secondary" type="button" id="nextBtn">下一页</button>
+            <button class="btn" type="button" id="closePlayerBtn">退出播放</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">方案已保存</div>
+
+    <script>
+        (function () {
+            const pages = [
+                {
+                    name: '欢迎页',
+                    type: 'welcome',
+                    title: '欢迎各位领导莅临指导',
+                    subtitle: '数据每日 06:00 自动更新',
+                    duration: 3,
+                    fontSize: 34,
+                    x: 0,
+                    y: 0,
+                    metrics: ['96.8', '98%', '第 2', '3 项']
+                },
+                {
+                    name: '经营报表',
+                    type: 'report',
+                    title: '月度经营指标完成情况',
+                    subtitle: '收入、成本、利润核心指标总览',
+                    duration: 8,
+                    fontSize: 32,
+                    x: 0,
+                    y: 8,
+                    metrics: ['1.28亿', '72%', '18.6%', '同比 +9%']
+                },
+                {
+                    name: '考核数据',
+                    type: 'rank',
+                    title: '部门绩效考核排名',
+                    subtitle: '按综合评分、完成率、整改闭环率计算',
+                    duration: 10,
+                    fontSize: 30,
+                    x: 0,
+                    y: 12,
+                    metrics: ['A 档', '92.5', '第 1', '100%']
+                },
+                {
+                    name: '整改跟踪',
+                    type: 'report',
+                    title: '重点事项整改闭环情况',
+                    subtitle: '逾期事项、责任部门、处理进度每日同步',
+                    duration: 4,
+                    fontSize: 30,
+                    x: 0,
+                    y: 12,
+                    metrics: ['24 项', '21 项', '3 项', '0 逾期']
+                }
+            ];
+
+            let currentIndex = 0;
+            let playerIndex = 0;
+            let playerTimer = null;
+            let progressTimer = null;
+            let isPaused = false;
+            let progressStart = 0;
+            let progressElapsed = 0;
+
+            const pageList = document.getElementById('pageList');
+            const currentMode = document.getElementById('currentMode');
+            const currentPageName = document.getElementById('currentPageName');
+            const currentDuration = document.getElementById('currentDuration');
+            const totalDuration = document.getElementById('totalDuration');
+            const titleInput = document.getElementById('titleInput');
+            const subtitleInput = document.getElementById('subtitleInput');
+            const durationInput = document.getElementById('durationInput');
+            const fontSizeInput = document.getElementById('fontSizeInput');
+            const fontSizeValue = document.getElementById('fontSizeValue');
+            const xInput = document.getElementById('xInput');
+            const xValue = document.getElementById('xValue');
+            const yInput = document.getElementById('yInput');
+            const yValue = document.getElementById('yValue');
+            const templateInput = document.getElementById('templateInput');
+            const screenBoard = document.getElementById('screenBoard');
+            const screenTitle = document.getElementById('screenTitle');
+            const screenSubtitle = document.getElementById('screenSubtitle');
+            const metricIds = ['metricOne', 'metricTwo', 'metricThree', 'metricFour'].map(function (id) {
+                return document.getElementById(id);
+            });
+            const playerOverlay = document.getElementById('playerOverlay');
+            const playerBoard = document.getElementById('playerBoard');
+            const playerTitle = document.getElementById('playerTitle');
+            const playerSubtitle = document.getElementById('playerSubtitle');
+            const playerMetrics = ['playerMetricOne', 'playerMetricTwo', 'playerMetricThree', 'playerMetricFour'].map(function (id) {
+                return document.getElementById(id);
+            });
+            const progressFill = document.getElementById('progressFill');
+            const toast = document.getElementById('toast');
+
+            function renderPageList() {
+                pageList.innerHTML = '';
+                pages.forEach(function (page, index) {
+                    const item = document.createElement('button');
+                    item.className = index === currentIndex ? 'page-card is-active' : 'page-card';
+                    item.type = 'button';
+                    item.dataset.index = String(index);
+                    item.innerHTML = '<span class="page-name">' + (index + 1) + '. ' + page.name + '</span>' +
+                        '<span class="page-meta"><span>' + page.type + '</span><span>' + page.duration + ' 秒</span></span>';
+                    pageList.appendChild(item);
+                });
+            }
+
+            function applyBoardState(board, page) {
+                board.style.setProperty('--title-x', page.x + 'px');
+                board.style.setProperty('--title-y', page.y + 'px');
+                board.style.setProperty('--title-size', page.fontSize + 'px');
+            }
+
+            function renderEditor() {
+                const page = pages[currentIndex];
+                currentPageName.textContent = page.name;
+                currentDuration.textContent = page.duration + ' 秒';
+                totalDuration.textContent = pages.reduce(function (sum, item) {
+                    return sum + Number(item.duration);
+                }, 0) + ' 秒';
+
+                titleInput.value = page.title;
+                subtitleInput.value = page.subtitle;
+                durationInput.value = page.duration;
+                fontSizeInput.value = page.fontSize;
+                fontSizeValue.textContent = page.fontSize;
+                xInput.value = page.x;
+                xValue.textContent = page.x;
+                yInput.value = page.y;
+                yValue.textContent = page.y;
+                templateInput.value = page.type;
+
+                screenTitle.textContent = page.title;
+                screenSubtitle.textContent = page.subtitle;
+                page.metrics.forEach(function (value, index) {
+                    metricIds[index].textContent = value;
+                });
+                applyBoardState(screenBoard, page);
+                renderPageList();
+            }
+
+            function updateCurrentPage(field, value) {
+                const page = pages[currentIndex];
+                if (field === 'duration' || field === 'fontSize' || field === 'x' || field === 'y') {
+                    page[field] = Number(value);
+                } else {
+                    page[field] = value;
+                }
+                renderEditor();
+            }
+
+            function showToast(message) {
+                toast.textContent = message;
+                toast.classList.add('is-visible');
+                window.setTimeout(function () {
+                    toast.classList.remove('is-visible');
+                }, 1800);
+            }
+
+            function renderPlayerPage() {
+                const page = pages[playerIndex];
+                playerTitle.textContent = page.title;
+                playerSubtitle.textContent = page.subtitle;
+                page.metrics.forEach(function (value, index) {
+                    playerMetrics[index].textContent = value;
+                });
+                applyBoardState(playerBoard, page);
+                progressFill.style.width = '0%';
+                progressElapsed = 0;
+                progressStart = Date.now();
+            }
+
+            function stopTimers() {
+                window.clearTimeout(playerTimer);
+                window.clearInterval(progressTimer);
+                playerTimer = null;
+                progressTimer = null;
+            }
+
+            function startProgress(duration) {
+                window.clearInterval(progressTimer);
+                progressStart = Date.now() - progressElapsed;
+                progressTimer = window.setInterval(function () {
+                    progressElapsed = Date.now() - progressStart;
+                    const percent = Math.min(progressElapsed / duration, 1) * 100;
+                    progressFill.style.width = percent + '%';
+                }, 80);
+            }
+
+            function scheduleNext() {
+                stopTimers();
+                if (isPaused) {
+                    return;
+                }
+                const duration = pages[playerIndex].duration * 1000;
+                startProgress(duration);
+                playerTimer = window.setTimeout(function () {
+                    playerIndex = (playerIndex + 1) % pages.length;
+                    renderPlayerPage();
+                    scheduleNext();
+                }, duration - progressElapsed);
+            }
+
+            function openPlayer(startIndex) {
+                playerIndex = startIndex;
+                isPaused = false;
+                document.getElementById('pauseBtn').textContent = '暂停';
+                playerOverlay.classList.add('is-visible');
+                playerOverlay.setAttribute('aria-hidden', 'false');
+                renderPlayerPage();
+                scheduleNext();
+            }
+
+            function closePlayer() {
+                stopTimers();
+                playerOverlay.classList.remove('is-visible');
+                playerOverlay.setAttribute('aria-hidden', 'true');
+            }
+
+            pageList.addEventListener('click', function (event) {
+                const card = event.target.closest('.page-card');
+                if (!card) {
+                    return;
+                }
+                currentIndex = Number(card.dataset.index);
+                renderEditor();
+            });
+
+            document.querySelectorAll('.mode-button').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    document.querySelectorAll('.mode-button').forEach(function (item) {
+                        item.classList.remove('is-active');
+                    });
+                    button.classList.add('is-active');
+                    currentMode.textContent = button.dataset.mode === 'schedule' ? '更新计划' : '编排模式';
+                    showToast(button.dataset.mode === 'schedule' ? '已切换到更新计划' : '已切换到编排模式');
+                });
+            });
+
+            titleInput.addEventListener('input', function () { updateCurrentPage('title', titleInput.value); });
+            subtitleInput.addEventListener('input', function () { updateCurrentPage('subtitle', subtitleInput.value); });
+            durationInput.addEventListener('input', function () { updateCurrentPage('duration', durationInput.value); });
+            fontSizeInput.addEventListener('input', function () { updateCurrentPage('fontSize', fontSizeInput.value); });
+            xInput.addEventListener('input', function () { updateCurrentPage('x', xInput.value); });
+            yInput.addEventListener('input', function () { updateCurrentPage('y', yInput.value); });
+            templateInput.addEventListener('change', function () { updateCurrentPage('type', templateInput.value); });
+
+            document.getElementById('savePlanBtn').addEventListener('click', function () { showToast('方案已保存'); });
+            document.getElementById('publishBtn').addEventListener('click', function () { showToast('已发布到大屏播放入口'); });
+            document.getElementById('previewBtn').addEventListener('click', function () { openPlayer(currentIndex); });
+            document.getElementById('playBtn').addEventListener('click', function () { openPlayer(0); });
+            document.getElementById('closePlayerBtn').addEventListener('click', closePlayer);
+            document.getElementById('prevBtn').addEventListener('click', function () {
+                playerIndex = (playerIndex - 1 + pages.length) % pages.length;
+                renderPlayerPage();
+                scheduleNext();
+            });
+            document.getElementById('nextBtn').addEventListener('click', function () {
+                playerIndex = (playerIndex + 1) % pages.length;
+                renderPlayerPage();
+                scheduleNext();
+            });
+            document.getElementById('pauseBtn').addEventListener('click', function (event) {
+                isPaused = !isPaused;
+                event.currentTarget.textContent = isPaused ? '继续' : '暂停';
+                if (isPaused) {
+                    stopTimers();
+                } else {
+                    scheduleNext();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && playerOverlay.classList.contains('is-visible')) {
+                    closePlayer();
+                }
+            });
+
+            renderEditor();
+        }());
+    </script>
+</body>
+</html>
