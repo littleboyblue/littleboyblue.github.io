@@ -358,7 +358,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: "PingFang
 <div id="app">
   <header id="topbar">
     <div class="left">
-      <span class="title">🏭 智慧运行<span class="accent">·</span>电厂</span>
+      <span class="title">🏭 智慧运行<span class="accent">·</span>工厂</span>
       <span class="title" style="font-size:16px;color:var(--text-dim);">小指标竞赛</span>
     </div>
     <div class="right">
@@ -462,14 +462,14 @@ const SETTINGS_KEY = 'daping_v2_settings';
 const TEAM_NAMES = ['运行一值', '运行二值', '运行三值', '运行四值'];
 const TEAM_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
 const TEAM_ICONS = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ'];
-const BONUS_BY_RANK = [400, 300, 200, 100];
+const BONUS_BY_RANK = [40, 30, 20, 10];
 const ASSESSMENT_ITEMS = [
-  { id: 'power_gen', name: '发电量', unit: '万kWh', higherBetter: true, maxScore: 150 },
-  { id: 'coal_rate', name: '供电煤耗', unit: 'g/kWh', higherBetter: false, maxScore: 150 },
-  { id: 'plant_rate', name: '厂用电率', unit: '%', higherBetter: false, maxScore: 100 },
-  { id: 'env_index', name: '环保指标', unit: '分', higherBetter: true, maxScore: 100 },
-  { id: 'safety', name: '安全运行', unit: '分', higherBetter: true, maxScore: 200 },
-  { id: 'defect', name: '设备缺陷', unit: '分', higherBetter: true, maxScore: 100 },
+  { id: 'output', name: '产量', unit: '吨', higherBetter: true, maxScore: 150 },
+  { id: 'material_rate', name: '原料消耗', unit: 'kg/吨', higherBetter: false, maxScore: 150 },
+  { id: 'energy_rate', name: '能耗率', unit: '%', higherBetter: false, maxScore: 100 },
+  { id: 'quality', name: '质量指标', unit: '分', higherBetter: true, maxScore: 100 },
+  { id: 'safety', name: '安全生产', unit: '分', higherBetter: true, maxScore: 200 },
+  { id: 'maintenance', name: '设备维护', unit: '分', higherBetter: true, maxScore: 100 },
   { id: 'operation', name: '操作规范', unit: '分', higherBetter: true, maxScore: 100 },
 ];
 function computeMaxScore() { return ASSESSMENT_ITEMS.reduce((s, a) => s + a.maxScore, 0); }
@@ -486,12 +486,12 @@ function generateTeamData(teamIdx) {
   }));
   items.forEach(item => {
     const def = ASSESSMENT_ITEMS.find(a => a.id === item.id);
-    if (def.id === 'power_gen') { item.value = randInt(315, 15); item.score = randInt(def.maxScore - 10, 10); }
-    else if (def.id === 'coal_rate') { item.value = rand(302, 3); item.score = randInt(def.maxScore - 10, 10); }
-    else if (def.id === 'plant_rate') { item.value = rand(5.6, 0.5); item.score = randInt(def.maxScore - 15, 15); }
-    else if (def.id === 'env_index') { item.value = randInt(def.maxScore - 5, 5); item.score = item.value; }
+    if (def.id === 'output') { item.value = randInt(95, 10); item.score = randInt(def.maxScore - 10, 10); }
+    else if (def.id === 'material_rate') { item.value = rand(95, 5); item.score = randInt(def.maxScore - 10, 10); }
+    else if (def.id === 'energy_rate') { item.value = rand(8.5, 1.0); item.score = randInt(def.maxScore - 15, 15); }
+    else if (def.id === 'quality') { item.value = randInt(def.maxScore - 5, 5); item.score = item.value; }
     else if (def.id === 'safety') { item.value = randInt(def.maxScore - 5, 5); item.score = item.value; }
-    else if (def.id === 'defect') { item.value = randInt(def.maxScore - 8, 8); item.score = item.value; }
+    else if (def.id === 'maintenance') { item.value = randInt(def.maxScore - 8, 8); item.score = item.value; }
     else if (def.id === 'operation') { item.value = randInt(def.maxScore - 5, 8); item.score = item.value; }
   });
   return {
@@ -596,8 +596,8 @@ function ensureRecords() {
 
 function ensureSettings() {
   let s = loadSettings();
-  if (!s) { s = { pageDurations: [5, 8, 8, 5], bonusRules: [400, 300, 200, 100] }; saveSettings(s); }
-  if (!s.bonusRules) { s.bonusRules = [400, 300, 200, 100]; saveSettings(s); }
+  if (!s) { s = { pageDurations: [5, 8, 8, 5], bonusRules: [40, 30, 20, 10] }; saveSettings(s); }
+  if (!s.bonusRules) { s.bonusRules = [40, 30, 20, 10]; saveSettings(s); }
   return s;
 }
 
